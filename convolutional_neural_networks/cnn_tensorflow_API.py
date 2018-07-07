@@ -189,37 +189,6 @@ class CNN(object):
 		return np.mean(Y == prediction)
 
 
-	def plot_filters(self):
-		# create figure with number of subplots corresponding
-		# to the number of filters:
-		count = 0
-		for layer in self.convpool_layers:
-			W = layer.params[0].eval() # we need to get real values of filter
-			N_filters = W.shape[3]
-			N_channels = W.shape[2]
-			n = math.ceil(math.sqrt(N_filters))
-
-			fig, axes = plt.subplots(n, n)
-			fig.suptitle('filter_%d'%count, fontsize=16)
-			fig.subplots_adjust(hspace=0.3, wspace=0.3)
-			
-			# plot the weights:
-			for i, ax in enumerate(axes.flat):
-				for j in range(N_channels):
-					if i < N_filters:
-						img = W[:, :, j, i]
-						ax.imshow(img, cmap='gray')
-					
-					ax.set_xticks([])
-					ax.set_yticks([])
-			count += 1
-					
-			plt.show()
-
-
-
-
-
 def main():
 	X, Y = getImageData()
 	# X, Y = shuffle(X, Y)
@@ -248,7 +217,6 @@ def main():
 	# test_acc = model.score(Xtest, Ytest)
 	# print('Test set acc: %.3f' % test_acc)
 
-	# model.plot_filters()
 
 
 
