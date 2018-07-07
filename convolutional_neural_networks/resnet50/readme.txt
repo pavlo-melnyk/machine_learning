@@ -1,0 +1,1 @@
+Implementation of ResNet50 in TensorFlow using pretrained weights from the implementation in Keras.
