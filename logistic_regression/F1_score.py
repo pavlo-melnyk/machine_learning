@@ -1,6 +1,4 @@
 import numpy as np
-from sklearn.metrics import f1_score, precision_score, recall_score
-
 
 def precision(T, Y):
 	tp = T[Y==1].sum()
