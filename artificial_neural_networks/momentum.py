@@ -10,7 +10,7 @@ from datetime import datetime
 def main():
 	# compare 3 scenarios:
 	# 1. mini-batch SGD
-	# 2. mini-batch SGD with the standart momentum
+	# 2. mini-batch SGD with the standard momentum
 	# 3. mini-batch SGD with the Nesterov momentum
 
 	max_iter = 20 
