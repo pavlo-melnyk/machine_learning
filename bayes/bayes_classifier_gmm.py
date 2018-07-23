@@ -1,9 +1,9 @@
 import numpy as np 
 import matplotlib.pyplot as plt
-import pandas as pd 
 
-from scipy.stats import multivariate_normal as mvn
-from utils import get_mnist_data 
+from sklearn.mixture import BayesianGaussianMixture
+from datetime import datetime
+from utils import get_mnist_data
 
 
 class BayesClassifier:
@@ -21,24 +21,35 @@ class BayesClassifier:
 		# assuming that classes are in [0, K-1], 
 		# calculate stats for every class:
 		for i in range(self.K):
+			t0 = datetime.now()
 			Xi = X[Y==i]
-			# calculate the mean per 'column':
-			mean_Xi = np.mean(Xi, axis=0) 
-			# calculate the covariance matrix (should be DxD, so we transpose Xi):
-			cov_Xi = np.cov(Xi.T)
+			# calculate the mean per feature:
+			mean_Xi = np.mean(Xi, axis=0)
+			# create a GMM model:
+			gmm = BayesianGaussianMixture(n_components=10) # n_components = max # clusters
+			# fit the data to the gmm:
+			print('Fitting GMM', i)
+			gmm.fit(Xi)
+			print('elapsed time:', datetime.now() - t0, '\n')
 			# save to the storage:
-			self.gauss.append({'mean': mean_Xi, 'cov': cov_Xi})
+			self.gauss.append({'model': gmm, 'mean': mean_Xi})
 			# the probability of class, p(Y=k) = #k_class_samples / #all_samples:
 			self.p_y.append(len(Xi)/self.N)
 
+
 	def sample(self, y):
+		gmm = self.gauss[y]['model']
+		# sample() returns a tuple (sample, cluster_the_sample_came_from):
+		sample, label = gmm.sample()
 		mean = self.gauss[y]['mean']
-		cov = self.gauss[y]['cov']
-		return mvn.rvs(mean=mean, cov=cov)
+		# or using a sklearn non-public parameter:
+		# mean = gmm.means_[label]
+		return sample.reshape(28, 28), mean.reshape(28, 28)
 
 	def random_sample(self):
 		y = np.random.choice(self.K, p=self.p_y)
 		return self.sample(y)
+
 
 
 def main():
@@ -50,17 +61,18 @@ def main():
 	cl.fit(X, Y)
 
 	for i in range(cl.K):
+		sample, mean = cl.sample(i)
 		plt.subplot(1, 2, 1)
-		plt.imshow(cl.sample(i).reshape(28, 28), cmap='gray')
+		plt.imshow(sample, cmap='gray')
 		plt.title('Generated Sample')
 		plt.subplot(1, 2, 2)
-		plt.imshow(cl.gauss[i]['mean'].reshape(28, 28), cmap='gray')
+		plt.imshow(mean, cmap='gray')
 		plt.title('Mean')
 		plt.suptitle('class "%s"'%i)
 		plt.show()
 
-	sample = cl.random_sample()
-	plt.imshow(sample.reshape(28, 28), cmap='gray')
+	sample, _ = cl.random_sample()
+	plt.imshow(sample, cmap='gray')
 	plt.title('a drawn sample')
 	plt.show()
 
