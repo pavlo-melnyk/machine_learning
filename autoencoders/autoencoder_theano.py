@@ -43,7 +43,7 @@ class HiddenLayer:
 
 
 class Autoencoder:
-	def __init__(self, D, hidden_layer_sizes, loss_fn='cross-entropy'):
+	def __init__(self, D, hidden_layer_sizes, loss_fn='sigmoid_cross-entropy'):
 		self.hidden_layer_sizes = hidden_layer_sizes
 
 		# input batch of training data (batch_size x D):
@@ -73,7 +73,7 @@ class Autoencoder:
 		# get output - our reconstruction:
 		self.output = self.forward(self.X)		
 
-		if loss_fn == 'cross-entropy':
+		if loss_fn == 'sigmoid_cross-entropy':
 			# assuming inputs and outputs to be Bernoulli probabilities
 			# define the cost function:
 			self.output = T.nnet.sigmoid(self.output)
@@ -147,7 +147,7 @@ def main():
 	Xtest, Ytest = X[-100:], Y[-100:]
 	X, Y = X[:-100], Y[:-100]
 
-	model = Autoencoder(D, [300], loss_fn='cross-entropy')
+	model = Autoencoder(D, [300], loss_fn='sigmoid_cross-entropy')
 	model.fit(X, epochs=15)
 
 	# display reconstruction: 
