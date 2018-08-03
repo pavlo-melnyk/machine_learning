@@ -214,10 +214,10 @@ class VariationalAutoencoder:
 
 
 	def transform(self, X):
-		'''Returns output of the encoder - calculated means of a given input.'''
+		'''Returns output of the encoder.'''
 		return self.sess.run(
 			self.means,
-			fedd_dict={self.X: X}
+			feed_dict={self.X: X}
 		)
 
 
@@ -238,7 +238,7 @@ class VariationalAutoencoder:
 
 
 	def prior_predictive_given_input_probs(self, Z):
-		''' Takes in a latent vector z, not a sample.
+		''' Takes in a latent vector Z, not a sample.
 		Generates an image (or output Bernoulli means).'''
 		return self.sess.run(
 			self.prior_predictive_given_Z_probs,
