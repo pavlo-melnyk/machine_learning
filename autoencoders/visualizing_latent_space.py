@@ -1,6 +1,7 @@
 import numpy as np 
 import tensorflow as tf 
 import matplotlib.pyplot as plt 
+import matplotlib.colors
 
 from utils import get_mnist_data
 from variational_autoencoder_tf import VariationalAutoencoder
@@ -50,10 +51,20 @@ def main():
 	# get the latent space:
 	Z = vae.transform(X) # returns 2 values for each sample - calculated means
 
-	# make a scatter plot:
+	# make a scatter plot of how an instance of a class maps to the latent space Z:
+	# (we want to show a discrete colorbar)
+	K = len(set(Y)) # number of classes = number of discrete color levels
+	# get a colormap:
+	cmap = plt.get_cmap('viridis', K)
+	# make a plot: 
 	plt.scatter(Z[:, 0], Z[:, 1], c=Y, s=15, alpha=0.5)
+	# plot a discrete colormap:
+	norm = matplotlib.colors.BoundaryNorm(np.arange(0, K+1)-0.5, K)
+	sm = plt.cm.ScalarMappable(cmap=cmap, norm=norm)
+	sm.set_array([])
+	plt.colorbar(sm, ticks=np.arange(0, K))
+	# name and display the plot:	
 	plt.title('Visualization of the Latent Space')
-	plt.colorbar()
 	plt.show()
 
 
@@ -61,7 +72,7 @@ def main():
 
 	# we are going to use the prior_predictive_given_input_probs() method;
 	# first, we generate an empty image to fill it in later:
-	n = 25 # number of images per side
+	n = 10 # number of images per side
 	image = np.empty((28 * n, 28 * n)) # D is the height and width of the input samples
 	
 	# generate the latent vectors:
