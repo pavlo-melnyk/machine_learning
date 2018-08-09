@@ -70,15 +70,15 @@ def main():
 
 	# plot what image is reproduced for different parts of Z:
 
-	# we are going to use the prior_predictive_given_input_probs() method;
+	# we are going to use the prior_predictive_probs_given_input() method;
 	# first, we generate an empty image to fill it in later:
-	n = 10 # number of images per side
+	n = 30 # number of images per side
 	image = np.empty((28 * n, 28 * n)) # D is the height and width of the input samples
 	
 	# generate the latent vectors:
 	Z = [] # a list of latern vectors
-	x_values = np.linspace(-3, 3, n) 
-	y_values = np.linspace(-3, 3, n)
+	x_values = np.linspace(-1, 1, n) 
+	y_values = np.linspace(-1, 1, n)
 	# we are going to make a prediction for all input latent vectors simultaneously:
 	for x in x_values:
 		for y in y_values:
@@ -86,7 +86,7 @@ def main():
 			Z.append(z)
 
 	# reconstructed images:
-	X_reconstructed = vae.prior_predictive_given_input_probs(Z)
+	X_reconstructed = vae.prior_predictive_probs_given_input(Z)
 
 	idx = 0
 	for i, x in enumerate(x_values):
@@ -94,9 +94,10 @@ def main():
 			x_reconstructed = X_reconstructed[idx].reshape(28, 28)
 			idx += 1
 			# map it to a particular part of the pre-created image 
-			image[i*28 : (i+1)*28, j*28 : (j+1)*28] = x_reconstructed
+			image[(n - 1 - i) * 28 : (n - i) * 28, j * 28 : (j + 1) * 28] = x_reconstructed
 	
 	plt.imshow(image, cmap='gray')
+	plt.axis('off')
 	plt.show()
 
 

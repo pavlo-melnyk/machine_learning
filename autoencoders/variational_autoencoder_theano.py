@@ -1,24 +1,49 @@
 import numpy as np
-import tensorflow as tf 
+import theano
+import theano.tensor as T 
 import matplotlib.pyplot as plt 
 import json
 
+from theano.tensor.shared_randomstreams import RandomStreams
 from utils import init_weights_and_biases, get_mnist_data, get_fashion_mnist_data
 
-# for later use:
-Bernoulli = tf.contrib.distributions.Bernoulli
-Normal = tf.contrib.distributions.Normal
+
+def rmsprop(cost, params, lr=1e-3, mu=0.0, decay=0.9, eps=1e-10):
+	''' Defines updates for RMSProp in Theano. 
+	Returns a list of updates.'''
+	grads = T.grad(cost, params)
+	updates = []
+	for p, g in zip(params, grads):
+		# cache
+		ones = np.ones_like(p.get_value(), dtype=np.float32)
+		c = theano.shared(ones)
+		new_c = decay*c + (np.float32(1.0) - decay)*g*g
+
+		# momentum:
+		zeros = np.zeros_like(p.get_value(), dtype=np.float32)
+		v = theano.shared(zeros)
+		new_v = mu*v - lr*g / T.sqrt(new_c + eps)
+
+		# param update:
+		new_p = p + new_v
+
+		# append the updates:
+		updates.append((c, new_c))
+		updates.append((v, new_v))
+		updates.append((p, new_p))
+
+	return updates
 
 
 class HiddenLayer:
-	def __init__(self, M1, M2, an_id, f=tf.nn.relu):
+	def __init__(self, M1, M2, an_id, f=T.nnet.relu):
 		W0, b0 = init_weights_and_biases(M1, M2)
-		self.W = tf.Variable(W0, name='W%s'%an_id)
-		self.b = tf.Variable(b0, name='b%s'%an_id)
+		self.W = theano.shared(W0, name='W%s'%an_id)
+		self.b = theano.shared(b0, name='b%s'%an_id)
 		self.f = f
-
+		self.params = [self.W, self.b]
 	def forward(self, X):
-		return self.f(tf.matmul(X, self.W) + self.b)
+		return self.f(X.dot(self.W) + self.b)
 
 
 class VariationalAutoencoder:
@@ -30,7 +55,7 @@ class VariationalAutoencoder:
 		self.hidden_layer_sizes = hidden_layer_sizes
 
 		# an input batch of thraining data (batch_size x D):
-		self.X = tf.placeholder(tf.float32, shape=(None, D), name='X_batch')
+		self.X = T.matrix(name='X_batch')
 
 
 		################################# ENCODER ################################
@@ -66,24 +91,19 @@ class VariationalAutoencoder:
 			Z = layer.forward(Z) # (batch_size x 2*M)
 		self.means = Z[:, :M] # a half of the output is the means (batch_size x M)
 		# apply softplus and add a small value for smoothing to the other half:
-		self.std_dev = tf.nn.softplus(Z[:, M:]) + 1e-6 
+		self.std_dev = T.nnet.softplus(Z[:, M:]) + 1e-6 
 
 		# sample from the q(Z| X):
 		# (that's why we need the means and the std_dev's)
 		# using reparameterization trick:
-		# 1) create a standard Normal distribution (N(0, 1)):
-		standard_normal = Normal(
-				loc = np.zeros(M, dtype=np.float32),
-				scale = np.ones(M, dtype=np.float32)
-		)
-
-		# 2) get a sample from the standard normal:
-		print(tf.shape(self.means)[0])
-		standard_sample = standard_normal.sample(tf.shape(self.means)[0]) # (batch_size x M)
+		# 1) create a standard Normal distribution (N(0, 1))
+		# and draw a sample from it:
+		self.rng = RandomStreams()
+		standard_sample = self.rng.normal((self.means.shape[0], M)) # (batch_size x M)
 
 		# 3) get a sample z ~ q(Z| X) (actually, batch_size samples Z)
 		#    by reparameterizing the standard_sample:
-		self.Z = self.means + standard_sample*self.std_dev # (batch_size x M)
+		self.Z = self.means + standard_sample * self.std_dev # (batch_size x M)
 
 		# the same can be done by feeding our means and std_dev
 		# as arguments into the constructor of the Normal class, 
@@ -106,88 +126,122 @@ class VariationalAutoencoder:
 			M1 = M2
 
 		# the DECODER final layer normally has a sigmoid activation,
-		# thus givin us the final output as probabilities;
-		# in this implementation Bernoulli class accepts logits,
-		# thus we don't need to use any activation at the final layer:
-		h = HiddenLayer(M1, D, ind + 1, f=lambda x: x)
+		# thus gives us the final output as probabilities:
+		h = HiddenLayer(M1, D, ind + 1, f=T.nnet.sigmoid)
 		self.decoder_layers.append(h)
 
-		# get the logits
+		# get the posterior predictive
 		# (perform the forward pass through the DECODER):
 		Z = self.Z # here Z stands for a current layer value
 		for layer in self.decoder_layers:
 			Z = layer.forward(Z)
-		logits = Z
-		posterior_predictive_logits = logits # for later use, size = (batch_size x D)
+		self.posterior_predictive_probs = Z # for later use, size = (batch_size x D)
 
 		# recall that output of the DECODER is a distribution;
-		# we ASSUME it's a Bernoulli distribution:
-		self.X_hat = Bernoulli(logits=logits) # p(X_reconstructed| X)
-
-		# draw the POSTERIOR PREDICTIVE SAMPLE - sample from X_hat:
-		self.posterior_predictive_sample = self.X_hat.sample() # X_reconstructed (D, )
-		self.posterior_predictive_probs = tf.nn.sigmoid(logits)
+		# draw the POSTERIOR PREDICTIVE SAMPLE - sample from DECODER's output:
+		self.posterior_predictive = self.rng.binomial(
+			size=self.posterior_predictive_probs.shape,
+			n=1, 
+			p=self.posterior_predictive_probs
+		) # X_reconstructed (D, )
 
 		# draw the PRIOR PREDICTIVE SAMPLE:
 		# 1) draw a sample from the standard normal - Z ~ N(0, 1):
-		#    we have already defined the standard normal, let's just draw a sample again:
-		Z_standard = standard_normal.sample(1) # (M, ) - size of the latent vector
+		Z_standard = self.rng.normal((1, M))
 		# 2) pass it through the decoder:
 		Z = Z_standard
 		for layer in self.decoder_layers:
-			Z = layer.forward(Z)
-		logits = Z
-		# the output Bernoulli distribution:
-		prior_predictive_dist = Bernoulli(logits=logits) # p(x_reconstructed| Z_standard)
-		self.prior_predictive_sample = prior_predictive_dist.sample()
-		self.prior_predictive_probs = tf.nn.sigmoid(logits)
+			Z = layer.forward(Z)		
+		self.prior_predictive_probs = Z
+
+		# 3) the output is a Bernoulli distribution - p(x_reconstructed| Z_standard);
+		#    draw a sample from it:
+		self.prior_predictive = self.rng.binomial(
+			size=self.prior_predictive_probs.shape,
+			n=1, 
+			p=self.prior_predictive_probs
+		)
 
 		# PRIOR PREDICTIVE GIVEN Z PROBS; used for visualization later on:
 		# create a placeholder for the input to the decoder:
-		self.Z_input = tf.placeholder(tf.float32, shape=(None, M))
+		self.Z_input = T.matrix('Z_input')
 		Z = self.Z_input # here Z stands for a current layer value
 		for layer in self.decoder_layers:
 			Z = layer.forward(Z)
-		logits = Z
-		self.prior_predictive_probs_given_Z = tf.nn.sigmoid(logits)
+		self.prior_predictive_probs_given_Z = Z
 
 
-		################################# COST ################################
+		################################# COST ##################################
 		# the ELBO - our objective for maximization - consists of two parts:
 		# ELBO = expected_log_likelihood - KL-divergence;
 		# but we'll minimize -ELBO instead:
 		# -ELBO = -expected_log_likelihood - (-kl_divergence)
 
 		# 1) KL-divergence:
-		#    we are comparing our q_of_z_given_x - a Gaussian (actually, batch_size Gaussians) -
-		# with the standard normal
-		kl = -tf.log(self.std_dev) + 0.5*(self.std_dev**2 + self.means**2) - 0.5 # (batch_size x M)
-		kl = tf.reduce_sum(kl, axis=1) # (batch_size x 1)
+		#   we are comparing our q_of_z_given_x - a Gaussian (actually, batch_size Gaussians) -
+		# 	with the standard normal
+		kl = -T.log(self.std_dev) + 0.5*(self.std_dev**2 + self.means**2) - 0.5 # (batch_size x M)
+		kl = T.sum(kl, axis=1) # (batch_size x 1) - we get the kl-divergence per sample
 
 		# 2) expected log-likelihood (negative cross-entropy):
-		# expected_log_likelihood = -tf.nn.sigmoid_cross_entropy_with_logits(
-		# 	logits=posterior_predictive_logits,
-		# 	labels=self.X)
-		# expected_log_likelihood = tf.reduce_sum(expected_log_likelihood, axis=1) # (batch_size x 1)
+		expected_log_likelihood = -T.nnet.binary_crossentropy(
+			output=self.posterior_predictive_probs,
+			target=self.X
+			)
+		expected_log_likelihood = T.sum(expected_log_likelihood, axis=1) # (batch_size x 1)
 		
-		# alternatively:
-		expected_log_likelihood = self.X_hat.log_prob(self.X) # (batch_size x D)
-		expected_log_likelihood = tf.reduce_sum(expected_log_likelihood, axis=1) # (batch_size x 1)
+		self.elbo = T.sum(expected_log_likelihood - kl)
 
 
-		self.elbo = tf.reduce_sum(expected_log_likelihood - kl)
+		#################### TRAINING AND PREDICTION FUNCTIONS ##################
+		# 1) collect the params:
+		params = []
+		for layer in self.encoder_layers:
+			params += layer.params
+		for layer in self.decoder_layers:
+			params += layer.params
+
+		# 2) define the updates:
+		decay = np.float32(0.9)
+		learning_rate = np.float32(0.001)
+
+		updates = rmsprop(-self.elbo, params, lr=1e-3, decay=decay)
+		
 
 		# training operation: 
-		# (NOTE: can be set up in the fit() function)
-		self.train_op = tf.train.RMSPropOptimizer(learning_rate=0.001).minimize(-self.elbo)
+		self.train_op = theano.function(
+			inputs=[self.X],
+			outputs=self.elbo,
+			updates=updates
+		)
+		
+		# NOTE: here and later x_reconstructed is called so for analogy with a simple autoencoder,
+		# 		it actually means a new drawn sample:
+		# draw a sample from p(x_reconstructed | X)
+		self.posterior_predictive_sample_and_probs = theano.function(
+			inputs=[self.X],
+			outputs=[self.posterior_predictive, self.posterior_predictive_probs]
+		)
 
-		# set up the session
-		self.sess = tf.InteractiveSession()
+		# draw a sample from p(x_reconstructed | z), where z ~ N(0, 1)
+		self.prior_predictive_sample_and_probs = theano.function(
+			inputs=[],
+			outputs=[self.prior_predictive, self.prior_predictive_probs]
+		)
 
-		# initialize all the variables in the graph: 
-		# (NOTE: can be done in the fit() function after defining the training operation)
-		self.init = tf.global_variables_initializer()
-		self.sess.run(self.init)
+		# return mean of q(z | x)
+		# (mean of our VAE approximation of true posterior p(z | x)):
+		self.transform = theano.function(
+			inputs=[self.X],
+			outputs=self.means
+		)
+
+		# draw a sample form p(x_reconstructed | z), from a given z
+		# (actually returns mean)
+		self.prior_predictive_probs_given_input = theano.function(
+			inputs=[self.Z_input],
+			outputs=self.prior_predictive_probs_given_Z
+		)
 
 
 	def fit(self, X, epochs=30, batch_size=64):
@@ -201,7 +255,7 @@ class VariationalAutoencoder:
 			np.random.shuffle(X)
 			for j in range(n_batches):
 				X_batch = X[j*batch_size:(j+1)*batch_size]
-				_, c = self.sess.run((self.train_op, self.elbo), feed_dict={self.X: X_batch})
+				c = self.train_op(X_batch)
 				c /= batch_size
 				costs.append(c)
 				if j % 100 == 0:
@@ -222,42 +276,16 @@ class VariationalAutoencoder:
 		)
 
 
-	def posterior_predictive(self, X):
-		''' Returns reconstructed input - a sample from p(X_reconstructed| X).'''
-		return self.sess.run(
-			(self.posterior_predictive_sample,
-			self.posterior_predictive_probs),
-			feed_dict={self.X: X}
-		)
-
-
-	def prior_predictive_and_probs(self):
-		''' First draws a sample from the chosen prior
-		(e.g. from the standard normal - Z ~ N(0, 1)), and then decodes it - 
-		draws a sample from p(x_reconstructed| Z), 
-		or better to say p(X_new| Z).'''
-		return self.sess.run((self.prior_predictive_sample,	self.prior_predictive_probs))
-
-
-	def prior_predictive_probs_given_input(self, Z):
-		''' Takes in a latent vector Z, not a sample.
-		Generates an image (or output Bernoulli means).'''
-		return self.sess.run(
-			self.prior_predictive_probs_given_Z,
-			feed_dict={self.Z_input: Z}
-		)
-
-
-
 def main():
 	X, Y = get_mnist_data(normalize=True)
-	# binarize the pictures:
+	# binarize the pictures to get proper Bernoulli random variables
+	# (isn't neccessary; one could try both):
 	X = (X > 0.5).astype(np.float32)
 	Xtest, Ytest = X[-100:], Y[-100:]
 	X, Y = X[:-100], Y[:-100]
 
 	# X, Y, Xtest, Ytest = get_fashion_mnist_data(normalize=True)
-	# # binarize the pictures:
+	# binarize the pictures:
 	# X, Xtest = (X > 0.5).astype(np.float32), (Xtest > 0.5).astype(np.float32)
 	N, D = X.shape
 
@@ -268,7 +296,7 @@ def main():
 	while True:
 		i = np.random.choice(len(Xtest))
 		x = Xtest[i]
-		sample, probs = vae.posterior_predictive([x])
+		sample, probs = vae.posterior_predictive_sample_and_probs([x])
 		plt.subplot(1, 3, 1)
 		plt.imshow(x.reshape(28, 28), cmap='gray')
 		plt.title('Original Image')
@@ -288,7 +316,7 @@ def main():
 	while True:
 		i = np.random.choice(len(Xtest))
 		x = Xtest[i]
-		image, probs = vae.prior_predictive_and_probs()
+		image, probs = vae.prior_predictive_sample_and_probs()
 		plt.subplot(1, 2, 1)
 		plt.imshow(image.reshape(28, 28), cmap='gray')
 		plt.title('Prior Predictive Sample')
