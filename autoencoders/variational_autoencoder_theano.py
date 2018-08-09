@@ -120,7 +120,7 @@ class VariationalAutoencoder:
 		M1 = M # the DECODER input layer size
 		for j, M2 in enumerate(reversed(self.hidden_layer_sizes[:-1])):
 			# index of the layer = the final ENCODER layer index 'i' + new counter 'j' + 1:
-			ind = (j + 1) + i
+			ind = (j + 1) + i + 1
 			h = HiddenLayer(M1, M2, ind) 
 			self.decoder_layers.append(h)
 			M1 = M2
@@ -292,7 +292,7 @@ def main():
 	vae = VariationalAutoencoder(D, [200, 100])
 	vae.fit(X)
 
-	# display reconstruction: 
+	# display original images, posterior predictive samples and probabilities:
 	while True:
 		i = np.random.choice(len(Xtest))
 		x = Xtest[i]
@@ -312,7 +312,7 @@ def main():
 		if prompt and prompt[0] in ['n', 'N']:
 			break
 
-	# display reconstruction from drawn random samples: 
+	# display prior predictive samples and probabilities: 
 	while True:
 		i = np.random.choice(len(Xtest))
 		x = Xtest[i]
