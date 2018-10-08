@@ -2,7 +2,9 @@
 An API for character-level RNNs utilizing TensorFlow.
 Inspired by Minimal character-level Vanilla RNN model written by Andrej Karpathy (@karpathy):
 https://gist.github.com/karpathy/d4dee566867f8291f086 .
-Learns from the input txt file. Generates text during the training process and writes it to a file.
+Learns from the input txt file.
+Supportst multilayer RNNs.
+Generates text during the training process and writes it to a file.
 To be improved...
 '''
 
@@ -18,8 +20,8 @@ from datetime import datetime
 
 
 class CharRNN:
-	def __init__(self, M):
-		self.M = M
+	def __init__(self, hidden_layer_sizes):
+		self.hidden_layer_sizes = hidden_layer_sizes
 		
 	def fit(self, X, T, encoding='gbk', learning_rate=1e-1,  mu=0.9, epochs=10, display_cost=True, activation=tf.nn.relu, RecurrentUnit=GRU):
 		# preprocess the data:
@@ -33,13 +35,17 @@ class CharRNN:
 		# for convenience:
 		N = self.N
 		V = self.V
-		M = self.M
+		hidden_layer_sizes = self.hidden_layer_sizes
 		self.f = activation
 
 		print('\ndata has %d characters, %d unique.\n' % (N, V))
 
-		# initialize and create variables:
-		hidden_layer = RecurrentUnit(num_units=M, activation=self.f)		
+		# create and initialize
+		hidden_layers = []
+		# create hidden layers - recurrent units:
+		for M in hidden_layer_sizes:
+			hidden_layers.append(RecurrentUnit(num_units=M, activation=self.f))
+		hidden_layers = tf.nn.rnn_cell.MultiRNNCell(hidden_layers)
 
 		# initialize logistic-regression layer:
 		Wo = init_weight(M, V).astype(np.float32)
@@ -47,32 +53,27 @@ class CharRNN:
 
 		# Wx, Wh, bh, etc. will be created by RecurrentUnit
 
-		# self.Wo = theano.shared(Wo)
 		self.Wo = tf.Variable(Wo)
-		# self.bo = theano.shared(bo)
 		self.bo = tf.Variable(bo)
 
-		# self.params += [self.Wo, self.bo]
-
 		# collect all the params:
-		self.params = [t for t in tf.trainable_variables()]
+		self.params = [p for p in tf.trainable_variables()]
 		
-		# for layer in self.hidden_layers:
-		# 	self.params += layer.params
-
 		# create placeholders for input and output:		
 		self.tfX = tf.placeholder(tf.float32, shape=(None, None, V), name='inputs')
 		tfY = tf.placeholder(tf.int32, shape=(None, ), name='targets')	
-		# thX = T.ivector('X')
-		# thY = T.ivector('Y')
-
+	
 		# create placeholders for sequence_length
 		# (needed in the tf.nn.dynamic_rnn function):
 		self.tfT = tf.placeholder(tf.int32, shape=(), name='T')
 
-		# forward propagate the data:
-		# get rnn cell (hidden_layer) output:
-		Z, states = tf.nn.dynamic_rnn(hidden_layer, tf.reshape(self.tfX, (1, self.tfT, V)), dtype=tf.float32)
+		# forward-propagate the data:
+		Z, states = tf.nn.dynamic_rnn(
+			cell=hidden_layers, 
+			inputs=tf.reshape(self.tfX, (1, self.tfT, V)), 
+			dtype=tf.float32
+		)
+
 		self.logits = tf.matmul(Z[0], self.Wo) + self.bo
 		self.py_x = tf.nn.softmax(self.logits)
 
@@ -183,12 +184,14 @@ class CharRNN:
 
 
 def train_and_generate(filename='kobzar.txt', encoding='utf-8'):
+	# load the data:
 	X = get_char_rnn_data(filename=filename, encoding=encoding)
 	# X = brown.get_sentences(return_str=True)
-	rnn = CharRNN(100)
+
+	# create a RNN and fit the data:
+	rnn = CharRNN([100])
 	rnn.fit(X, T=100, encoding=encoding, epochs=11, learning_rate=1e-3, RecurrentUnit=Basic)
 
-	
 
 if __name__ == '__main__':
 	train_and_generate()
