@@ -3,10 +3,8 @@ An API for character-level RNNs utilizing TensorFlow.
 Inspired by Minimal character-level Vanilla RNN model written by Andrej Karpathy (@karpathy):
 https://gist.github.com/karpathy/d4dee566867f8291f086 .
 Learns from the input txt file.
-Supportst multilayer RNNs.
+Supports multilayer RNNs, saving, and batch training.
 Generates text during the training process and writes it to a file.
-Supports batch training.
-Support saving.
 '''
 
 import sys
