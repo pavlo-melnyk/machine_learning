@@ -2,14 +2,15 @@ import numpy as np
 import matplotlib.pyplot as plt 
 
 
-activation = 'swish'
+activation = 'relu'
+beta = 10
 
 def forward(X, W1, b1, W2, b2):
 	
 	Z = X.dot(W1) + b1
 
 	if activation == 'swish':
-		Z = Z * 1 / (1 + np.exp(-Z))
+		Z = Z * 1 / (1 + np.exp(-beta*Z))
 
 	elif activation == 'relu':
 		# rectifier linear unit:
@@ -18,6 +19,9 @@ def forward(X, W1, b1, W2, b2):
 	elif activation == 'sigmoid':
 		# sigmoid:
 		Z = 1 / (1 + np.exp(-Z))
+
+	elif activation == 'tanh':
+		Z = (np.exp(Z) - np.exp(-Z)) / (np.exp(Z) + np.exp(-Z))
 
 	A = Z.dot(W2) + b2
 
@@ -38,8 +42,8 @@ def derivative_b2(T, Y):
 
 def derivative_W1(X, Z, T, Y, W2):
 	if activation == 'swish':
-		sigmoid = 1 / (1 + np.exp(-Z))
-		dZ = sigmoid + Z * sigmoid*(1 - sigmoid*sigmoid) * 10 
+		sigmoid = 1 / (1 + np.exp(-beta*Z))
+		dZ = sigmoid + Z * sigmoid*(1 - sigmoid) * beta
 		return X.T.dot((Y - T).dot(W2.T)*dZ)
 
 	elif activation == 'relu':      
@@ -51,8 +55,8 @@ def derivative_W1(X, Z, T, Y, W2):
 	 
 def derivative_b1(Z, T, Y, W2):
 	if activation == 'swish':
-		sigmoid = 1 / (1 + np.exp(-Z))
-		dZ = sigmoid + Z * sigmoid*(1 - sigmoid*sigmoid) * 10
+		sigmoid = 1 / (1 + np.exp(-beta*Z))
+		dZ = sigmoid + Z * sigmoid*(1 - sigmoid) * beta
 		return ((Y - T).dot(W2.T)*dZ).sum(axis=0)
 		
 	elif activation == 'relu':
