@@ -20,11 +20,12 @@ def error_rate(y, t):
 	return np.mean(y != t)
 
 
-def swish(a):
+def f(a):
+	'''The activation function.'''
 	# betta = 1
 	# return a / (1 + np.exp(-betta*a))
-	# return a * (a > 0)
-	return T.tanh(a)
+	return a * (a > 0)
+	# return T.tanh(a)
 
 
 def convpool(X, W, b, poolsize=(2, 2)):
@@ -42,7 +43,7 @@ def convpool(X, W, b, poolsize=(2, 2)):
 	# we first reshape it to a tensor of shape (1, n_filters, 1, 1);
 	# each bias will thus be broadcasted across mini-batches
 	# and feature map width & height:
-	return swish(pooled_out + b.dimshuffle('x', 0, 'x', 'x'))
+	return f(pooled_out + b.dimshuffle('x', 0, 'x', 'x'))
 
 
 def init_filter(shape, poolsz):
@@ -52,25 +53,34 @@ def init_filter(shape, poolsz):
 
 def plot_filter(W, name='filter'):
 	# create figure with number of subplots corresponding
-	# to number of filters:
+	# to the number of filters:
 	N_filters = W.shape[0]
 	N_channels = W.shape[1]
-	n = math.ceil(math.sqrt(N_filters))
+	n = math.ceil(math.sqrt(N_filters*N_channels))
+
+	# print('filter.shape:', W.shape)
 
 	fig, axes = plt.subplots(n, n)
 	fig.suptitle(name, fontsize=16)
 	fig.subplots_adjust(hspace=0.3, wspace=0.3)
 	
 	# plot the weights:
-	for i, ax in enumerate(axes.flat):
+	k = 0
+	for i in range(N_filters):
 		for j in range(N_channels):
-			if i < N_filters:
-				img = W[i, j]
-				ax.imshow(img, cmap='gray')
-			
+			# print('i:', i, 'j:', j)
+			img = W[i, j]
+			# print('img.shape:', img.shape)
+			ax = axes.flat[k]
+			ax.imshow(img, cmap='gray')				
 			ax.set_xticks([])
 			ax.set_yticks([])
-			
+			k += 1
+
+	for ax in axes.flat[k:]:
+		ax.set_xticks([])
+		ax.set_yticks([])
+
 	plt.show()
 
 
@@ -151,8 +161,8 @@ def main():
 	# forward pass:
 	Z1 = convpool(thX, W1, b1)
 	Z2 = convpool(Z1, W2, b2)
-	Z3 = swish(Z2.flatten(ndim=2).dot(W3) + b3)
-	Z4 = swish(Z3.dot(W4) + b4)
+	Z3 = f(Z2.flatten(ndim=2).dot(W3) + b3)
+	Z4 = f(Z3.dot(W4) + b4)
 	pY = T.nnet.softmax(Z4.dot(W5) + b5)
 	# pY = T.nnet.softmax(Z3.dot(W4) + b4)
 	
