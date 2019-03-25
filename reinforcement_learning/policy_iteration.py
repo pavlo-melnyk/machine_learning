@@ -56,7 +56,9 @@ def main(grid_type='negative'):
 
 		# STEP 2A: iterative policy evaluation
 		while True:
-			# NOTE: all of the actions, next states and rewards are consid
+			# NOTE: all of the actions, next states and rewards 
+			#       are considered deterministic
+
 			max_change = 0
 			for s in states:
 				old_v = V[s] # save the old value of the state
@@ -83,11 +85,10 @@ def main(grid_type='negative'):
 				break
 
 		# STEP 2B: policy iteration
-		# for each state we take an action according to the policy 
-		# and calculate the value of the state; 
-		# then we check whether there is a better action - take all possible
+		# for each state we take an action according to the policy
+		# and check whether there is a better action - take all possible
 		# actions from that state and calculate the values; 
-		# we choose the action that results in max value of the state.
+		# we choose the action that results in the max value of the state.
 		policy_improved = False
 		for s in states:
 
@@ -105,7 +106,7 @@ def main(grid_type='negative'):
 					# print('reached here!')	
 					grid.set_state(s)
 
-					# take an action, receive your keto-choclate bar:
+					# take an action, receive your keto-chocolate bar:
 					r = grid.move(a)
 
 					s_prime = grid.current_state
