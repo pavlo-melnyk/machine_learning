@@ -10,9 +10,7 @@ from iterative_policy_evaluation import print_values, print_policy
 from datetime import datetime
 
 
-THRESHOLD = 1e-4
 GAMMA = 0.9 # the discount factor
-ALL_POSSIBLE_ACTIONS = ['U', 'R', 'D', 'L']
 
 
 def play_game(grid, policy):
@@ -125,7 +123,7 @@ def main(grid_type='negative'):
 				# or keeping truck of the number of visits for each state
 				# without storing all the returns:
 				N[s] += 1
-				V[s] = (1 / (N[s])) * G + (1 - 1 / (N[s])) * V[s]
+				V[s] = (1 / N[s]) * G + (1 - 1 / N[s]) * V[s]
 
 				seen_states.add(s)
 
