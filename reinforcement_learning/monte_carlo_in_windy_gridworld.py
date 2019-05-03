@@ -101,7 +101,7 @@ if __name__ == '__main__':
 
 	states = grid.all_states
 
-	# initialize value function and numper of visits per state:
+	# initialize value function and number of visits per state:
 	V = {}
 	N = {}
 	for s in states:
