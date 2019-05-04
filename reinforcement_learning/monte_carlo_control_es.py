@@ -19,7 +19,7 @@ N_EPISODES = 10000 # the number of episodes to play
 
 def play_game(grid, policy):
 	''' Takes in grid and policy.
-	Returns a list of state-return tuples.
+	Returns a list of state-action-return triples.
 	'''
 	
 	# randomly select a starting state for every episode:
