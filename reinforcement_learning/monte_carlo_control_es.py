@@ -6,11 +6,12 @@ NOTE: this is a solution to the Control Problem, i.e., a method for finding
       the optimal policy.
 
 '''
-import numpy as np 
+import numpy as np
+import matplotlib.pyplot as plt
 
 from gridworld import standard_grid, negative_grid
 from iterative_policy_evaluation import print_values, print_policy
-
+from datetime import datetime
 
 ALL_POSSIBLE_ACTIONS = ['U', 'D', 'L', 'R']
 GAMMA = 0.9 # the discount factor
@@ -123,15 +124,18 @@ if __name__ == '__main__':
 				N[s][a] = 0
 				returns[(s,a)] = []
 
-	V = {} # state-value function (used to display values later)
-
 	# display the initial policy:
 	print('\ninitial policy:')
 	print_policy(policy, grid)
 
 	# First-Visit Monte Carlo Exploring-Starts:
+	deltas = [] 
 	for i in range(N_EPISODES):
-		# print('\n\n------> Playing episode %d' % (i+1))
+		if i % 1000 == 0:			
+			print('\nepisode:', i)
+
+		# generate an episode:
+		max_change = 0 # to check convergence of the value function
 		states_actions_returns = play_game(grid, policy)
 		visited_s_and_a_pairs = set()
 
@@ -139,12 +143,19 @@ if __name__ == '__main__':
 		# print('\n------> Performing Policy Evaluation...')
 		for s, a, G in states_actions_returns:
 			if (s,a) not in visited_s_and_a_pairs:
+				old_q = Q[s][a]
 				# returns[(s,a)].append(G)
 				# Q[s][a] = np.mean(returns[(s,a)])
+
+				# equivalently, calculate the running average:
 				N[s][a] += 1
 				Q[s][a] = (1 - 1 / N[s][a]) * Q[s][a] + (1 / N[s][a]) * G
+
+				max_change = max(max_change, np.abs(old_q - Q[s][a]))
 				visited_s_and_a_pairs.add((s,a))
 
+		deltas.append(max_change)
+		
 		# STEP 2: Policy Improvement
 		# print('\n------> Performing Policy Improvement...')
 		for s in policy.keys():
@@ -157,7 +168,8 @@ if __name__ == '__main__':
 			policy[s] = best_a
 			
 
-
+	V = {} # state-value function
+	# do argmax on Q(s,a):
 	for s in policy.keys():
 		max_q = np.float('-inf')
 		for a in ALL_POSSIBLE_ACTIONS:
@@ -174,6 +186,12 @@ if __name__ == '__main__':
 	print('\nfinal values:')
 	print_values(V, grid)
 
+	# plot the deltas:
+	plt.plot(deltas)
+	plt.title('Q(s,a) Convergence')
+	plt.xlabel('episode')
+	plt.ylabel('max change')
+	plt.show()
 	
 
 
