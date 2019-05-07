@@ -4,4 +4,7 @@ some machine learning examples, including:
 - Convolutional Neural Networks;
 - Autoencoders;
 - Recurrent Neural Networks;
+- Explore-Exploit dilemma solutions;
+- Dynamic Programming techniques;
+- Monte Carlo methods;
 - other related scripts
