@@ -20,7 +20,7 @@ N_EPISODES = 5000 # the number of episodes to play
 
 def random_action(a, eps=0.1):
 	''' Epsilon-Soft.
-	Returns given action, a, with the probability
+	Returns the given action, a, with the probability
 	p < (1 - eps + eps/len(ALL_POSSIBLE_ACTIONS));
 
 	Returns any other action, !a, with the probability 
@@ -96,7 +96,7 @@ def play_game(grid, policy):
 
 
 if __name__ == '__main__':
-	grid_type = input('\nchoose grid type (standard/negative):\n')
+	grid_type = input('\nchoose grid type (standard/negative):\n').strip()
 
 	if grid_type == 'negative':
 		step_cost = float(input('\nenter step_cost (e.g. \'-1\' or \'-0.1\'):\n').strip())
