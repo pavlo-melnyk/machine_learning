@@ -3,7 +3,7 @@ An implementation of the TD(0) algorithm
 for the Gridworld game (see 'gridworld.py' for reference).
 
 NOTE: this is a solution to the Prediciton Problem, 
-	  i.e., a method for finding the value function given policy.
+      i.e., a method for finding the value function given policy.
 '''
 
 import numpy as np 
@@ -34,10 +34,8 @@ def random_action(a, eps=0.1):
 		return np.random.choice(ALL_POSSIBLE_ACTIONS)
 
 
-def play_game(grid, policy, V):
-	''' Plays an episode; updates the value function online.
-	Returns the value function.
-	'''
+def play_game(grid, policy):
+	''' Plays an episode; updates the value function online.'''
 
 	# starting position is the same for every episode:
 	s = (2, 0)
@@ -62,8 +60,6 @@ def play_game(grid, policy, V):
 		V[old_s] = V[old_s] + ALPHA*(r + GAMMA*V[s] - V[old_s]) 
 
 		# states_n_rewards.append((s, r))
-
-	return V
 
 
 if __name__ == '__main__':
@@ -112,7 +108,7 @@ if __name__ == '__main__':
 	for t in range(N_EPISODES):
 		if t % 100 == 0:
 			print('episode:', t)
-		V = play_game(grid, policy, V)
+		play_game(grid, policy)
 		
 
 	print('\nfinal values:')
