@@ -39,7 +39,7 @@ def random_action(a, eps=0.5):
 	eps/len(ALL_POSSIBLE_ACTIONS).
 	'''
 	p = np.random.random()
-	if p < (1 - eps):
+	if p > eps:
 		return a
 	else:
 		return np.random.choice(ALL_POSSIBLE_ACTIONS)
@@ -142,7 +142,7 @@ if __name__ == '__main__':
 	for s, n in N.items():
 		N[s] = n / total_n_evaluations
 
-	print('\nproportion of time spent per state evaluation:')
+	print('\nproportion of total evaluation time per state:')
 	print_values(N, grid)
 
 	plt.plot(deltas)
