@@ -79,6 +79,7 @@ if __name__ == '__main__':
 	deltas = [] # to check the convergence of the value function
 	t = 1.0 # the divisor for epsilon in epsilon-greedy	
 	for i in range(N_EPISODES):
+		# adaptive epsilon for epsilon-greedy:
 		if i % 100 == 0:
 			t += 1e-2
 		if i % 500 == 0:
@@ -95,30 +96,27 @@ if __name__ == '__main__':
 		max_change = 0 
 		
 		while not grid.game_over:
-			old_s = s # s(t)
-			old_a = a # a(t)
-			old_q = Q[s][a] # Q(s(t), a(t))
+			cur_s = s # s(t)
+			cur_a = a # a(t)
+			old_q = Q[cur_s][cur_a] # Q(s(t), a(t))
 			N[s] += 1			
 			
 			# take an epsilon-greedy action, arrive in a state,
 			# and receive a reward:			
-			r = grid.move(a) # r(t+1) - the reward for landing in s(t)
+			r = grid.move(a) # r(t+1) - the reward for landing in s(t+1)
 			s = grid.current_state # s(t+1) = s_prime
 			# we also need to know a(t+1), since the update equation
 			# involves Q(s(t+1), a(t+1)):
 			a = random_action(best_value_and_action(Q, s)[1], eps=0.5/t)
 
 			# decay the learing rate based on the number of visits per state given an action:
-			alpha = ALPHA/alpha_divisor[old_s][old_a]
-			alpha_divisor[old_s][old_a] += 0.005
+			alpha = ALPHA/alpha_divisor[cur_s][cur_a]
+			alpha_divisor[cur_s][cur_a] += 0.005
 
 			# make a TD(0) update: 
-			# we can do it online, b/c we're using the expected value
-			# of the return, r + GAMMA*V(s_prime),
-			# NOT the return itself			
-			Q[old_s][old_a] = Q[old_s][old_a] + alpha*(r + GAMMA*Q[s][a] - Q[old_s][old_a]) 
+			Q[cur_s][cur_a] = Q[cur_s][cur_a] + alpha*(r + GAMMA*Q[s][a] - Q[cur_s][cur_a]) 
 
-			max_change = max(max_change, np.abs(old_q - Q[old_s][old_a]))
+			max_change = max(max_change, np.abs(old_q - Q[cur_s][cur_a]))
 		deltas.append(max_change)
 
 	# find the optimal value function, V(s),
