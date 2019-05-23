@@ -76,7 +76,6 @@ if __name__ == '__main__':
 	print()
 
 	# TD(0):
-	deltas = [] # to check the convergence of the value function
 	for t in range(N_EPISODES):
 		if t % 100 == 0:
 			print('episode:', t)
