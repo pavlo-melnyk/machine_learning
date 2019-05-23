@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 from gridworld import standard_grid, negative_grid
 from iterative_policy_evaluation import print_values, print_policy
 
-N_EPISODES = 1000
+N_EPISODES = 2000
 GAMMA = 0.9 # the discount factor
 ALPHA = 0.1 # sort of a 'learning rate', a constant for the running avg
 ALL_POSSIBLE_ACTIONS = ['U', 'R', 'D', 'L']
@@ -32,34 +32,6 @@ def random_action(a, eps=0.1):
 		return a
 	else:
 		return np.random.choice(ALL_POSSIBLE_ACTIONS)
-
-
-def play_game(grid, policy):
-	''' Plays an episode; updates the value function online.'''
-
-	# starting position is the same for every episode:
-	s = (2, 0)
-	grid.set_state(s)
-	
-	# NOTE: timing! we're in a state s(t), for landing in which 
-	#       we've received a reward r(t) 
-	# states_n_rewards = [(s, 0)]
-
-	while not grid.game_over:
-		old_s = s # current position, s(t)
-		# take an epsilon-greedy action, arrive in a state,
-		# and receive a reward:
-		a = random_action(policy[s]) 
-		r = grid.move(a)
-		s = grid.current_state # our s(t+1) = s_prime 
-
-		# make a TD(0) update: 
-		# we can do it online, b/c we're using the expected value
-		# of the return, r + GAMMA*V(s_prime),
-		# NOT the return itself
-		V[old_s] = V[old_s] + ALPHA*(r + GAMMA*V[s] - V[old_s]) 
-
-		# states_n_rewards.append((s, r))
 
 
 if __name__ == '__main__':
@@ -108,8 +80,29 @@ if __name__ == '__main__':
 	for t in range(N_EPISODES):
 		if t % 100 == 0:
 			print('episode:', t)
-		play_game(grid, policy)
+
+		# play an episode
+		# starting position is the same for every episode:
+		s = (2, 0)
+		grid.set_state(s)
 		
+		# NOTE: timing! we're in a state s(t), for landing in which 
+		#       we've received a reward r(t) 
+		# states_n_rewards = [(s, 0)]
+
+		while not grid.game_over:
+			cur_s = s # current position, s(t)
+			# take an epsilon-greedy action, arrive in a state,
+			# and receive a reward:
+			a = random_action(policy[s]) 
+			r = grid.move(a)
+			s = grid.current_state # our s(t+1) = s_prime 
+
+			# make a TD(0) update: 
+			# we can do it online, b/c we're using the expected value
+			# of the return, r + GAMMA*V(s_prime),
+			# NOT the return itself			
+			V[cur_s] = V[cur_s] + ALPHA*(r + GAMMA*V[s] - V[cur_s])
 
 	print('\nfinal values:')
 	print_values(V, grid)
