@@ -71,7 +71,6 @@ def feature_transformer(s, a):
 		1                  if a == 'R' else 0,
 	])
 
-		
 	# NOTE: we won't use one-hot encoding, b/c we would 
 	#       have the same number of parameters to store
 	#       as with the tabular method we used before;
@@ -83,7 +82,7 @@ def feature_transformer(s, a):
 	#       value function.
 
 	# uncomment to do one-hot encoding:
-	# x = np.zeros(IDX+1) # len(x) = |S|*|A|
+	# x = np.zeros(IDX) # len(x) = |S|*|A|
 	# idx = SA2IDX[s][a]
 	# x[idx] = 1.0 
 	return x
@@ -169,13 +168,6 @@ if __name__ == '__main__':
 		_, a = best_value_and_action(s)
 		a = random_action(a, eps=0.5/t)
 
-		# get a feature vector, x, given the (s,a) pair:
-		x = feature_transformer(s, a)
-
-		# calculate the approximation, q_hat,
-		# i.e., the prediction for the (s,a) pair, Q_hat(s, a):
-		q_hat = theta.T.dot(x)
-
 		# NOTE: timing! we're in a state s(t), for landing in which 
 		#       we've received a reward r(t) and from where we take 
 		#       an action a(t) and receive a reward r(t+1) 
@@ -185,15 +177,19 @@ if __name__ == '__main__':
 		while not grid.game_over:
 			cur_s = s # s(t)
 			cur_a = a # a(t)
-			cur_x = x # the gradient in the update equation
-			cur_q_hat = q_hat
+			# get a feature vector, x, given the (s,a) pair
+			# (it is also the gradient in the update equation):
+			cur_x = feature_transformer(s, a)
+			# calculate the approximation, q_hat,
+			# i.e., the prediction for the (s,a) pair, Q_hat(s, a):
+			cur_q_hat = theta.T.dot(cur_x)
 			old_theta = theta.copy() 
 
 			N[s] += 1
 
 			# take the epsilon-greedy action, a(t), arrive in a state,
 			# and receive a reward:			
-			r = grid.move(a) # r(t+1) - the reward for landing in s(t+1)
+			r = grid.move(cur_a) # r(t+1) - the reward for landing in s(t+1)
 			s = grid.current_state # s(t+1) = s_prime
 
 			# recall, target = r + GAMMA*q_hat(s_prime, a_prime)
@@ -205,8 +201,7 @@ if __name__ == '__main__':
 				# i.e., q_hat(s_prime, a_prime),
 				# we also need to know a(t+1):
 				a = random_action(best_value_and_action(s)[1], eps=0.5/t)
-				x = feature_transformer(s, a)
-				q_hat = theta.T.dot(x)
+				q_hat = theta.T.dot(feature_transformer(s, a))
 				target = r + GAMMA*q_hat			
 
 			# make a semi-gradient update: 

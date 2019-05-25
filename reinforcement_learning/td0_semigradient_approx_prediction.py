@@ -85,7 +85,7 @@ if __name__ == '__main__':
 	print()
 
 	############################# TD(0) Semi-Gradient: #############################
-	deltas = [] # to check the convergence of the value function
+	deltas = [] # to check the convergence of theta
 	t = 1.0 # the learning rate divisor
 	for i in range(N_EPISODES):
 		if i % 10 == 0:
@@ -101,12 +101,6 @@ if __name__ == '__main__':
 		s = (2, 0)
 		grid.set_state(s)
 
-		# transform the state to a feture vector:
-		x = feature_transformer(s)
-
-		# get the prediction for the current state, V_hat(s):
-		v_hat = theta.T.dot(x) 
-
 		# NOTE: timing! we're in a state s(t), for landing in which 
 		#       we've received a reward r(t) and from where we take 
 		#       an action a(t) and receive a reward r(t+1)
@@ -115,8 +109,10 @@ if __name__ == '__main__':
 			old_theta = theta.copy()
 
 			cur_s = s # current position, s(t)
-			cur_x = x			
-			cur_v_hat = v_hat
+			# transform the state to a feture vector:
+			cur_x = feature_transformer(s)
+			# get the prediction for the current state, V_hat(s):		
+			cur_v_hat = theta.T.dot(cur_x)
 
 			# take an epsilon-greedy action:
 			a = random_action(policy[cur_s]) # a(t)

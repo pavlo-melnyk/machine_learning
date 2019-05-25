@@ -97,7 +97,7 @@ if __name__ == '__main__':
 		
 		while not grid.game_over:
 			cur_s = s # s(t)
-			# the distincion between Q-Learning and SARSA:
+			# the distinction between Q-Learning and SARSA:
 			# the action used for updating Q may not be taken
 			cur_a = random_action(a, eps=0.5/t) # a(t)
 			# or a uniform random action:
