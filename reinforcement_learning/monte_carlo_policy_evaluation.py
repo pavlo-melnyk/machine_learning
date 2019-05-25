@@ -59,7 +59,9 @@ def play_game(grid, policy):
 
 
 
-def main(grid_type='negative'):
+if __name__ == '__main__':
+	grid_type = input('\nchoose grid type (\'standard\', \'negative\'):\n')
+
 	if grid_type == 'negative':
 		step_cost = float(input('\nenter step_cost (e.g. \'-1\' or \'-0.1\'):\n').strip())
 		# get the grid:
@@ -102,7 +104,11 @@ def main(grid_type='negative'):
 		(2, 3): 'U',
 	}
 
-	# First-Visit Monte Carlo:
+	# display the policy:
+	print('\nfixed policy:')
+	print_policy(policy, grid)
+
+	############################# First-Visit Monte Carlo: #############################
 	t0 = datetime.now()
 	for t in range(1000):
 		states_and_returns = play_game(grid, policy)
@@ -130,20 +136,10 @@ def main(grid_type='negative'):
 	dt = datetime.now() - t0
 
 	# values:
-	print('\nvalues:')
+	print('\nestimated values:')
 	print_values(V, grid)
 
-	# return:
-	print('\npolicy:')
-	print_policy(policy, grid)
-
 	print('\nETA:', dt)
-
-
-
-if __name__ == '__main__':
-	grid_type = input('\nchoose grid type (\'standard\', \'negative\'):\n')
-	main(grid_type)
 
 
 

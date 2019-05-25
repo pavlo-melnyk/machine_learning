@@ -128,7 +128,7 @@ if __name__ == '__main__':
 	print('\ninitial policy:')
 	print_policy(policy, grid)
 
-	# First-Visit Monte Carlo Exploring-Starts:
+	############################# First-Visit Monte Carlo Exploring-Starts: #############################
 	deltas = [] 
 	for i in range(N_EPISODES):
 		if i % 1000 == 0:			

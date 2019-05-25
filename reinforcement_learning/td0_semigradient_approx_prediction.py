@@ -76,10 +76,6 @@ if __name__ == '__main__':
 	print('\nfixed policy:')
 	print_policy(policy, grid)
 
-	V = {}
-	for s in grid.all_states:
-		V[s] = 0
-
 	# number of features:
 	D = 4
 
@@ -88,7 +84,7 @@ if __name__ == '__main__':
 
 	print()
 
-	# TD(0) Semi-Gradient:
+	############################# TD(0) Semi-Gradient: #############################
 	deltas = [] # to check the convergence of the value function
 	t = 1.0 # the learning rate divisor
 	for i in range(N_EPISODES):
@@ -153,7 +149,7 @@ if __name__ == '__main__':
 	plt.xlabel('episodes')
 	plt.show()
 
-	# the estimate value function:
+	# estimate the value function:
 	V_hat = {}
 	# print('\nstate  --->  feature vector')
 	for s in policy.keys():

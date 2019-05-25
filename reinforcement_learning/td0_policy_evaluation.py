@@ -75,7 +75,7 @@ if __name__ == '__main__':
 
 	print()
 
-	# TD(0):
+	############################# TD(0): #############################
 	for t in range(N_EPISODES):
 		if t % 100 == 0:
 			print('episode:', t)

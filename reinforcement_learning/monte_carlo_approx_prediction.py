@@ -103,7 +103,7 @@ if __name__ == '__main__':
 	deltas = [] # for convergence check
 	t = 1.0 # learning rate divisor
 
-	# First-Visit Monte Carlo:
+	################### First-Visit Monte Carlo with Approximation: ###################
 	for i in range(N_EPISODES):
 		if i % 100 == 0:
 			t += 0.1

@@ -108,7 +108,7 @@ if __name__ == '__main__':
 		V[s] = 0
 		N[s] = 0
 
-	# First-Visit Monte Carlo:
+	############################# First-Visit Monte Carlo: #############################
 	for i in range(10000):
 		states_and_returns = play_game(grid, POLICY)
 		visited_s = set()

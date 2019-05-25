@@ -11,6 +11,7 @@ import matplotlib.pyplot as plt
 from gridworld import standard_grid, negative_grid
 from iterative_policy_evaluation import print_values, print_policy
 
+
 N_EPISODES = 10000
 GAMMA = 0.9 # the discount factor
 ALPHA = 0.1 # sort of a 'learning rate', a constant for the running avg
@@ -75,14 +76,14 @@ if __name__ == '__main__':
 
 	print()
 
-	# SARSA:
+	############################# SARSA: #############################
 	deltas = [] # to check the convergence of the value function
 	t = 1.0 # the divisor for epsilon in epsilon-greedy	
 	for i in range(N_EPISODES):
 		# adaptive epsilon for epsilon-greedy:
 		if i % 100 == 0:
 			t += 1e-2
-		if i % 500 == 0:
+		if i % 1000 == 0:
 			print('episode:', i)
 		
 		# starting position is the same for every episode:
@@ -110,7 +111,7 @@ if __name__ == '__main__':
 			a = random_action(best_value_and_action(Q, s)[1], eps=0.5/t)
 
 			# decay the learing rate based on the number of visits per state given an action:
-			alpha = ALPHA/alpha_divisor[cur_s][cur_a]
+			alpha = ALPHA / alpha_divisor[cur_s][cur_a]
 			alpha_divisor[cur_s][cur_a] += 0.005
 
 			# make a TD(0) update: 
@@ -119,12 +120,12 @@ if __name__ == '__main__':
 			max_change = max(max_change, np.abs(old_q - Q[cur_s][cur_a]))
 		deltas.append(max_change)
 
-	# find the optimal value function, V(s),
+	# find the optimal value function, V*(s),
 	# and the optimal policy:
 	V = {}
 	policy = {}
 
-	# do argmax on Q(s,a):
+	# do argmax on Q*(s,a):
 	for s in grid.actions.keys():
 		V[s], policy[s] = best_value_and_action(Q, s)
 	
@@ -136,9 +137,9 @@ if __name__ == '__main__':
 	print_policy(policy, grid)
 
 	# for debugging:
-	total_n_evaluations = np.sum(list(N.values()))
+	total_evaluations = np.sum(list(N.values()))
 	for s, n in N.items():
-		N[s] = n / total_n_evaluations
+		N[s] = n / total_evaluations
 
 	print('\nproportion of total evaluation time per state:')
 	print_values(N, grid)
