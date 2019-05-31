@@ -16,10 +16,7 @@ def play_game(env, w, display=False):
 	while not done:
 		if display:
 			# watch the episode:
-			try:
-				env.render()
-			except ImportError:
-				pass
+			env.render()
 		# select and take an action:
 		action = select_action(w, observation)			
 		observation, reward, done, _ = env.step(action)
@@ -28,8 +25,7 @@ def play_game(env, w, display=False):
 
 
 def random_search(env, epochs=100, n_episodes=100, verbose=False):
-	''' Does a random search in the parameter
-	space for a linear model.
+	''' Does a random search in the parameter space for a linear model.
 	'''
 	observation = env.reset()
 
@@ -39,7 +35,7 @@ def random_search(env, epochs=100, n_episodes=100, verbose=False):
 	lengths = []
 	# random search:
 	for e in range(epochs):
-		# ramdomly initialize the parameters:
+		# ramdomly initialize the weights:
 		weights = np.random.randn(*observation.shape)
 		avg_length = 0
 
@@ -66,8 +62,8 @@ if __name__ == '__main__':
 	env = gym.make('CartPole-v1')
 
 	# parameters for the random search:
-	epochs = 100
-	n_episodes = 1000
+	epochs = 100 # number of times to adjust the weights
+	n_episodes = 1000 # we play to decide whether to update the weights
 
 	# perform the random search:
 	lengths, best_weights = random_search(env, epochs, n_episodes, verbose=True)

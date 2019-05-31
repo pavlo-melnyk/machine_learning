@@ -28,7 +28,7 @@ print('\nthe start state:', s)
 # we can get some useful info from the console as well:
 box = env.observation_space
 # print('\n', box)
-# box. # type in the console and click [Tab]
+# box. # type in the console and hit [Tab]
 
 # similar with the actions:
 actions = env.action_space
