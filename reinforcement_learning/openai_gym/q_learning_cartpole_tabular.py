@@ -78,7 +78,7 @@ def play_game(model, eps, gamma, display=False):
 		a = model.eps_greedy_action(s, eps)
 
 		# take the action, land in a new state, receive a reward:   
-		s_prime, r, done, _ = env.step(a)
+		s_prime, r, done, _ = model.env.step(a)
 
 		total_r += r
 		
