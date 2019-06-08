@@ -100,7 +100,7 @@ def play_game(model, eps, gamma, display=False):
 		# the next state becomes current:
 		s = s_prime	
 
-	# ass the terminal state:
+	# add the terminal state:
 	states.append(s)	
 	return i, total_r, states
 
