@@ -125,7 +125,7 @@ if __name__ == '__main__':
 	# env = gym.make('CartPole-v0')
 	env = gym.make('CartPole-v1') # https://gym.openai.com/envs/CartPole-v1
 	
-	filename = os.path.basename(__file__).split()[0]
+	filename = os.path.basename(__file__).split('.')[0]
 	save_as = filename + ' ' + str(datetime.now()).replace(':', ' ') # enable for windows
 
 	if 'wrap' in sys.argv:
