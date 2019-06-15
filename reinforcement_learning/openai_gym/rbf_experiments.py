@@ -16,7 +16,7 @@ def rbf(x, c, gamma):
     ''' 
     Takes in a data vector x, centroid/exemplar c, 
     and the precision parameter gamma = 1/variance.
-    Computes and returnes a Gaussian RBF function 
+    Computes and returns a Gaussian RBF function 
             f(x) = exp( -gamma * ||x-c||^2 ) 
     - the exp of the scaled negative squared distance
     between x and c.
