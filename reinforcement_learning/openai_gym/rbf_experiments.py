@@ -15,7 +15,7 @@ from sklearn.kernel_approximation import RBFSampler
 def rbf(x, c, gamma):
     ''' 
     Takes in a data vector x, centroid/exemplar c, 
-    and the precision parameter gamma = 1/variance.
+    and a shape parameter gamma.
     Computes and returns a Gaussian RBF function 
             f(x) = exp( -gamma * ||x-c||^2 ) 
     - the exp of the scaled negative squared distance
