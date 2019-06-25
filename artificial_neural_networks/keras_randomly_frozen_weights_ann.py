@@ -39,7 +39,7 @@ class CustomDense(Dense):
 		self.units = units
 		self.freeze_ratio = freeze_ratio
 		self.seed = seed # to reproduce the position of the frozen weights, 
-						 # given the same freeze_ratio
+				# given the same freeze_ratio
 		self.verbose = verbose
 		self.visualize = visualize
 		super(CustomDense, self).__init__(units, **kwargs)
