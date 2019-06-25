@@ -46,20 +46,24 @@ class CustomDense(Dense):
 
 		for i in range(n_chunks):
 			weights.append(
-				self.add_weight(name='W_frozen',
-								shape=(chunk_size, ),
-								initializer=self.kernel_initializer,
-								regularizer=self.kernel_regularizer, 
-								trainable=False)
+				self.add_weight(
+					name='W_frozen',
+					shape=(chunk_size, ),
+					initializer=self.kernel_initializer,
+					regularizer=self.kernel_regularizer, 
+					trainable=False
+				)
 			)
 
 		if (n_non_trainable_weights % n_chunks != 0):
 			weights.append(
-				self.add_weight(name='W_frozen',
-								shape=(n_non_trainable_weights % chunk_size, ),
-								initializer=self.kernel_initializer,
-								regularizer=self.kernel_regularizer, 
-								trainable=False)
+				self.add_weight(
+					name='W_frozen',
+					shape=(n_non_trainable_weights % chunk_size, ),
+					initializer=self.kernel_initializer,
+					regularizer=self.kernel_regularizer, 
+					trainable=False
+				)
 			)	
 
 		assert K.eval(K.concatenate(weights)).shape[0] == n_non_trainable_weights
@@ -75,20 +79,24 @@ class CustomDense(Dense):
 
 		for i in range(n_chunks):
 			weights.append(
-				self.add_weight(name='W',
-								shape=(chunk_size, ),
-								initializer=self.kernel_initializer,
-								regularizer=self.kernel_regularizer, 
-								trainable=True)
+				self.add_weight(
+					name='W',
+					shape=(chunk_size, ),
+					initializer=self.kernel_initializer,
+					regularizer=self.kernel_regularizer, 
+					trainable=True
+				)
 			)
 
 		if (n_trainable_weights % n_chunks != 0):
 			weights.append(
-				self.add_weight(name='W',
-								shape=(n_trainable_weights % chunk_size, ),
-								initializer=self.kernel_initializer,
-								regularizer=self.kernel_regularizer, 
-								trainable=True)
+				self.add_weight(
+					name='W',
+					shape=(n_trainable_weights % chunk_size, ),
+					initializer=self.kernel_initializer,
+					regularizer=self.kernel_regularizer, 
+					trainable=True
+				)
 			)	
 		
 		assert K.eval(K.concatenate(weights)).shape[0] == n_weights
@@ -117,11 +125,13 @@ class CustomDense(Dense):
 		del weights
 		
 		if self.use_bias:
-			self.bias = self.add_weight(shape=(self.units,),
-										initializer=self.bias_initializer,
-										name='bias',
-										regularizer=self.bias_regularizer,
-										constraint=self.bias_constraint)
+			self.bias = self.add_weight(
+				shape=(self.units,),
+				initializer=self.bias_initializer,
+				name='bias',
+				regularizer=self.bias_regularizer,
+				constraint=self.bias_constraint
+			)
 	
 		self.built = True
 		# super(CustomDense, self).build(input_shape) # don't call it, throws an exception
@@ -177,9 +187,9 @@ def main():
 
 	model = Sequential()	
 	model.add(CustomDense(256, freeze_ratio=freeze_ratio, seed=seed, verbose=verbose,
-						visualize=visualize, input_shape=(D,), activation='relu'))	
+				visualize=visualize, input_shape=(D,), activation='relu'))	
 	model.add(CustomDense(K, freeze_ratio=freeze_ratio, seed=seed, verbose=verbose,
-						visualize=visualize, activation='softmax'))	
+				visualize=visualize, activation='softmax'))	
 	model.compile(loss='sparse_categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
 	model.summary()
 	
