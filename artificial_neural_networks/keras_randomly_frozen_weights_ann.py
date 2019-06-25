@@ -1,3 +1,22 @@
+'''
+An implementation of a Feed-Forward NN with a frozen subset of weights WITHIN a layer.
+
+By adjusting the 'freeze_ratio' argument in the CustomDense layer constructor,
+one can choose the number of weights to freeze during training.
+They are randomly distributed in the layer weight matrix.
+
+Visualization of the weight matrix is performed once the constructor's
+'visualize' argument is set to True.
+
+Much slower compared to the training with the plain Dense layer. 
+
+Runs faster on the CPU.
+
+The question of training only a subset of parameters
+using Keras was discussed at
+https://github.com/keras-team/keras/issues/3075
+'''
+
 import os
 import sys
 
@@ -19,7 +38,8 @@ class CustomDense(Dense):
 	def __init__(self, units, freeze_ratio=0.1, seed=None, verbose=False, visualize=False, **kwargs):
 		self.units = units
 		self.freeze_ratio = freeze_ratio
-		self.seed = seed # to reproduce the results
+		self.seed = seed # to reproduce the position of the frozen weights, 
+						 # given the same freeze_ratio
 		self.verbose = verbose
 		self.visualize = visualize
 		super(CustomDense, self).__init__(units, **kwargs)
@@ -55,7 +75,7 @@ class CustomDense(Dense):
 				)
 			)
 
-		if (n_non_trainable_weights % n_chunks != 0):
+		if n_non_trainable_weights % n_chunks != 0:
 			weights.append(
 				self.add_weight(
 					name='W_frozen',
@@ -88,7 +108,7 @@ class CustomDense(Dense):
 				)
 			)
 
-		if (n_trainable_weights % n_chunks != 0):
+		if n_trainable_weights % n_chunks != 0:
 			weights.append(
 				self.add_weight(
 					name='W',
