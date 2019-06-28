@@ -143,7 +143,7 @@ class FeatureTransformer:
         #       check the following link for details: 
         #       https://www.kaggle.com/sy2002/rbfsampler-actually-is-not-using-any-rbfs
 
-        # RBF kernels with different variances are to cover different state's data space:
+        # RBF kernels with different variances are to cover different states' data space:
         transformer = FeatureUnion([
             ('rbf_1', RBFSampler(gamma=0.05, n_components=1000)),
             ('rbf_2', RBFSampler(gamma=0.1, n_components=1000)),

@@ -20,7 +20,7 @@ class FeatureTransformer:
     def __init__(self, env):
         # gather 10^4 samples from the state-space:
         state_samples = np.array([env.observation_space.sample() for i in range(10000)])
-        # scale the collected data, s.t. mean = 0, var = 1:
+        # scale the collected data, s.t. feature_mean = 0, feature_var = 1:
         scaler = StandardScaler()
         scaler.fit(state_samples)
         scaled_samples = scaler.transform(state_samples)
@@ -38,7 +38,7 @@ class FeatureTransformer:
         #       check the following link for details: 
         #       https://www.kaggle.com/sy2002/rbfsampler-actually-is-not-using-any-rbfs
 
-        # RBF kernels with different variances are to cover different state's data space:
+        # RBF kernels with different variances are to cover different states' data space:
         transformer = FeatureUnion([
             ('rbf_1', RBFSampler(gamma=0.5, n_components=500)),
             ('rbf_2', RBFSampler(gamma=1.0, n_components=500)),
