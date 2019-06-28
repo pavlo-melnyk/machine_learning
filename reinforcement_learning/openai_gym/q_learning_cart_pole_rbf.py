@@ -219,6 +219,7 @@ def play_game(model, eps, gamma):
         total_reward += r       
         
         if done and steps < 499:
+            # penalize our Agent for not reaching the maximum # of steps:
             r = -100
 
         # update the parameters of the model:
@@ -227,7 +228,6 @@ def play_game(model, eps, gamma):
         
         # the next state becomes current:
         s = s_prime
-
         
         steps += 1
 
