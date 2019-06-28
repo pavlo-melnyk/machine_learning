@@ -7,7 +7,8 @@ import matplotlib.pyplot as plt
 
 from gym import wrappers
 from mpl_toolkits.mplot3d import Axes3D 
-from sklearn.linear_model import SGDRegressor
+# from sklearn.linear_model import SGDRegressor
+from q_learning_cart_pole_rbf import SGDRegressor
 from sklearn.pipeline import FeatureUnion
 from sklearn.preprocessing import StandardScaler
 from sklearn.kernel_approximation import RBFSampler
@@ -17,7 +18,7 @@ from datetime import datetime
 
 class FeatureTransformer:
     def __init__(self, env):
-        # gather 10^5 samples from the state-space:
+        # gather 10^4 samples from the state-space:
         state_samples = np.array([env.observation_space.sample() for i in range(10000)])
         # scale the collected data, s.t. mean = 0, var = 1:
         scaler = StandardScaler()
@@ -98,7 +99,7 @@ class Model:
 
 
 
-def play_game(model, eps, gamma, display=False):
+def play_game(model, eps, gamma):
     total_reward = 0
     s = model.env.reset()    
     steps = 0
@@ -159,11 +160,9 @@ def plot_cost_to_go(model, num_tiles=20):
 
 def main():
     env = gym.make('MountainCar-v0')
-    # max number of steps per episode:
-	# steps_limit = env._max_episode_steps
-	# env._max_episode_steps = steps_limit
-	# print('\ninitial steps_limit:', steps_limit)
-
+    # set max number of steps per episode:
+    env._max_episode_steps = 500
+	
     feature_transformer = FeatureTransformer(env)
     # print('feature.dimensionality:', feature_transformer.dimensionality)
     # s = env.reset()
@@ -186,6 +185,7 @@ def main():
     for t in range(n_episodes):
         t0 = datetime.now()
         eps = 0.1*(0.97**t)
+        # eps = 0 # using optimistic initial values method
         steps, total_reward = play_game(model, eps, gamma)
 
         total_rewards[t] = total_reward
@@ -205,7 +205,6 @@ def main():
     plot_running_avg(total_rewards)
 
     plot_cost_to_go(model)
-
 
 
 
