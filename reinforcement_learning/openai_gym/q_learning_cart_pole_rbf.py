@@ -120,40 +120,16 @@ class SGDRegressor:
     
 class FeatureTransformer:
     def __init__(self, env):
-        # play 5000 episodes, collect state samples:
-        # state_samples = []
-        # for n in range(5000):
-        #     s = env.reset()
-        #     state_samples.append(s)
-        #     done = False
-        #     while not done:
-        #         s, r, done, _ = env.step(env.action_space.sample())
-        #         state_samples.append(s)
-        # state_samples = np.array(state_samples)
-        # print('\n# of collected samples:', len(state_samples))
-
-        # gather 10^4 samples from the state-space:
+        # guess a plausible range of states:
         state_samples = np.random.random((20000, 4))*2 - 2
-        # state_samples = np.concatenate(
-        #     [np.random.randn(50000, 1)*4 - 0,
-        #      np.random.randn(50000, 1)*100 - 0,
-        #      np.random.randn(50000, 1)*0.35 - 0,
-        #      np.random.randn(50000, 1)*100 - 0], axis=1
-        # )
-        # print(state_samples.shape)
-        # exit()
-        # print('state_samples.mean(axis=0):', state_samples.mean(axis=0))
-        # print('state_samples.mean():', state_samples.mean())
-        # print('state_samples.var():', state_samples.var())
-
+        
         # scale the collected data, s.t. feature_mean = 0, feature_var = 1:
         scaler = StandardScaler()
         scaler.fit(state_samples)
         # print('scaler.mean_:', scaler.mean_)
         scaled_samples = scaler.transform(state_samples)
         # print('scaled_samples.mean(axis=0):', scaled_samples.mean(axis=0))
-        # exit()
-        
+                
         # a single RBF kernel is 
         # 
         #            f(x) = exp( -gamma * ||x-c||^2 ) ,
@@ -282,12 +258,7 @@ def main():
     # exit()
 
     feature_transformer = FeatureTransformer(env)
-    # print('feature.dimensionality:', feature_transformer.dimensionality)
-    # s = env.reset()
-    # feature = feature_transformer.transform([s])
-    # print('feature.shape:', feature.shape)
-    # exit()
-
+    
     # if required, save the video of our Agent playing the game:
     filename = os.path.basename(__file__).split('.')[0]
     save_as = filename + ' ' + str(datetime.now()).replace(':', ' ') # enable for windows
