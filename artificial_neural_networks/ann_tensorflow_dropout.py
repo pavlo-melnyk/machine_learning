@@ -169,9 +169,9 @@ class ANN(object):
 
 
 def main():
-	X, Y = getData()
+	# X, Y = getData()
 	#X, Y = getBinaryData()
-	# X, Y = get_normalized_data()
+	X, Y = get_normalized_data()
 
 	t0 = datetime.now()
 	model = ANN([500, 300], [0.8, 0.8, 0.8])
