@@ -2,7 +2,7 @@ import numpy as np
 import tensorflow as tf
 import matplotlib.pyplot as plt 
 
-from util import get_normalized_data, y2indicator, swish, error_rate, init_weight_and_bias
+from util import get_normalized_data, getData, getBinaryData, y2indicator, swish, error_rate, init_weight_and_bias
 from sklearn.utils import shuffle
 from datetime import datetime 
 
@@ -19,8 +19,8 @@ class HiddenLayer(object):
 		self.parameters = [self.W, self.b]
 
 
-	def forward(self, X):
-		return swish(tf.matmul(X, self.W) + self.b, tensorflow=True)
+	def forward(self, X, activation=tf.nn.relu):
+		return activation(tf.matmul(X, self.W) + self.b)
 
 
 
@@ -149,10 +149,19 @@ class ANN(object):
 
 
 	def forward_predict(self, X):
-		Z = X
-		Z = Z * self.dropout_rates[0]
-		for h, p in zip(self.hidden_layers, self.dropout_rates):
-			Z = h.forward(Z) * p
+		Z = X		
+		
+		# below is wrong:
+		# Z = Z * self.dropout_rates[0]
+		# for h, p in zip(self.hidden_layers, self.dropout_rates):
+		# 	Z = h.forward(Z) * p
+
+		# this one is correct - we don't need to scale during test time,
+		# b/c during training, the weights are updated when neurons' outputs
+		# are scaled by 1/p_keep:
+		for h in self.hidden_layers:
+			Z = h.forward(Z)
+
 		# the output layer:
 		logits = tf.matmul(Z, self.W) + self.b
 		return logits
@@ -160,7 +169,9 @@ class ANN(object):
 
 
 def main():
-	X, Y = get_normalized_data()
+	X, Y = getData()
+	#X, Y = getBinaryData()
+	# X, Y = get_normalized_data()
 
 	t0 = datetime.now()
 	model = ANN([500, 300], [0.8, 0.8, 0.8])
