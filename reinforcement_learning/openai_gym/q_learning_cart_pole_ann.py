@@ -113,7 +113,7 @@ def plot_running_avg(total_rewards):
     N = len(total_rewards)
     running_avg = np.empty(N)
     for t in range(N):
-        running_avg[t] = np.mean( total_rewards[max(0, t-100): t+int(t==0)] )
+        running_avg[t] = np.mean( total_rewards[max(0, t-99):t+int(t==0 or t>=100)] )
     plt.plot(running_avg)
     plt.xlabel('episodes')
     plt.title('Running Average')
@@ -167,7 +167,7 @@ def main():
         if t % 100 == 0:
             print('episode: %d\tETA: %s\ttotal reward: %.3f\teps: %.3f' % \
                 (t, datetime.now() - t0, total_reward, eps))
-            print('avg reward over last 100:', np.mean( total_rewards[max(0, t-100):t+int(t==0)] ))
+            print('avg reward over last 100:', np.mean( total_rewards[max(0, t-99):t+int(t==0 or t>=100)] ))
     
     # print('\navg episode length:', avg_length)
     print('\navg reward for last 100 episodes:', np.mean(total_rewards[-100:]))

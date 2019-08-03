@@ -113,7 +113,7 @@ def plot_running_avg(total_rewards):
 		# average over 100 episodes
 		# (as per Open AI docs, the Agent is judged by how well
 		# it has performed over 100 episodes):
-		running_avg[t] = total_rewards[max(0, t-100):t+int(t==0)].mean()
+		running_avg[t] = np.mean( total_rewards[max(0, t-99):t+int(t==0 or t>=100)] )
 	plt.plot(running_avg)
 	plt.title('Total Rewards Running Average Over 100 Episodes')
 	plt.show()
@@ -160,7 +160,7 @@ if __name__ == '__main__':
 		
 		if t % 100 == 0:
 			print('t:', t, '\ttotal_r:', total_r, '\tavg_r last 100:',\
-				  np.round(total_rewards[max(0, t-100):t+int(t==0)].mean(), 4), '\teps:', np.round(eps, 5))
+				  np.round(total_rewards[max(0, t-99):t+int(t==0 or t>=100)].mean(), 4), '\teps:', np.round(eps, 5))
 
 	dt = datetime.now() - t0
 

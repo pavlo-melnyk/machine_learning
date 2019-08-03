@@ -239,7 +239,7 @@ def plot_running_avg(total_rewards):
     N = len(total_rewards)
     running_avg = np.empty(N)
     for t in range(N):
-        running_avg[t] = np.mean( total_rewards[max(0, t-100): t+int(t==0)] )
+        running_avg[t] = np.mean( total_rewards[max(0, t-99):t+int(t==0 or t>=100)] )
     plt.plot(running_avg)
     plt.title('Running Average')
     plt.show()
