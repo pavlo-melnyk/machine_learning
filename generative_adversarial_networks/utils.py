@@ -62,7 +62,6 @@ def get_bob_ross_data(dim=196):
 		os.mkdir(path+'reshaped_data')
 		
 		for i in range(N):
-			# crop_and_resave(filenames[i], path+'align_and_cropped', offset_h=108)
 			im = imread(filenames[i])
 			small = imresize(im, (dim, dim))
 
@@ -72,6 +71,5 @@ def get_bob_ross_data(dim=196):
 			if i % 100 == 0:
 				print('%d/%d' % (i, N))
 
-	# make sure to return the cropped version:
 	filenames = glob(path+'reshaped_data/*.png'+'reshaped_data/*.jpg')
 	return filenames
