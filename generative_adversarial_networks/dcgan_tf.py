@@ -109,15 +109,15 @@ class FractionallyStridedConvLayer:
 
 		# apply batch normalization
 		if self.apply_batch_norm:
-			conv_out = tf.contrib.layers.batch_norm(
-			conv_out,
-			decay=0.9, 
-			updates_collections=None,
-			epsilon=1e-5,
-			scale=True,
-			is_training=is_training,
-			reuse=reuse,
-			scope=self.name,
+				conv_out = tf.contrib.layers.batch_norm(
+				conv_out,
+				decay=0.9, 
+				updates_collections=None,
+				epsilon=1e-5,
+				scale=True,
+				is_training=is_training,
+				reuse=reuse,
+				scope=self.name,
 			)
 
 		return self.f(conv_out)
@@ -146,14 +146,14 @@ class DenseLayer(object):
 		# apply batch normalization
 		if self.apply_batch_norm:
 			a = tf.contrib.layers.batch_norm(
-			a,
-			decay=0.9, 
-			updates_collections=None,
-			epsilon=1e-5,
-			scale=True,
-			is_training=is_training,
-			reuse=reuse,
-			scope=self.name,
+				a,
+				decay=0.9, 
+				updates_collections=None,
+				epsilon=1e-5,
+				scale=True,
+				is_training=is_training,
+				reuse=reuse,
+				scope=self.name,
 			)
 		return self.f(a)
 
@@ -259,9 +259,6 @@ class DCGAN:
 		).minimize(
 			self.g_cost, var_list=self.g_params
 		)
-
-		# show_all_variables()
-		# exit()
 
 		# set up session and initialize our variables for later
 		self.init_op = tf.global_variables_initializer()
