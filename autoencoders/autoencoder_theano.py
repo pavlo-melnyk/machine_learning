@@ -87,7 +87,6 @@ class Autoencoder:
 
 		elif loss_fn == 'mse':
 			# assuming the difference (error) between inputs and outputs to be Gaussian
-			self.output = T.nnet.sigmoid(self.output) # assuming output is in range [0, 1]				
 			self.cost = T.mean((self.X - self.output)**2)
 
 		self.predict = theano.function(
