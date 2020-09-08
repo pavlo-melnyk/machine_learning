@@ -39,7 +39,7 @@ def image_generator(batch_size=64, n_batches=10):
 				# normalize the targets to be in range [0, 1]:
 				Y[i, 0] = row0 / 100            # top-right corner y-coord
 				Y[i, 1] = col0 / 100            # tor-right corner x-coord
-				Y[i, 2] = (row1 - row0) / 100   # hight
+				Y[i, 2] = (row1 - row0) / 100   # height
 				Y[i, 3] = (col1 - col0) / 100   # width
 
 			# yield a batch of samples and targets:
@@ -57,14 +57,14 @@ def make_and_plot_prediction(model, x=0):
 		col1 = np.random.randint(col0, 100)
 		x[row0:row1, col0:col1, :] = 1
 
-		print('\n\ngenerated test sample box coords\nrow: {}, col: {}, hight: {}, width: {}'.format(row0, col0, row1-row0, col1-col0))
+		print('\n\ngenerated test sample box coords\nrow: {}, col: {}, height: {}, width: {}'.format(row0, col0, row1-row0, col1-col0))
 
 		# predict bounding box using the pre-trained model:
 		p = model.predict(np.expand_dims(x, 0))[0]
 
 		# reverse the transformation into un-normalized form:
 		p *= 100
-		print('\nprediction\nrow: %.3f, col: %.3f, hight: %.3f, width: %.3f' % (p[0], p[1], p[2], p[3]))
+		print('\nprediction\nrow: %.3f, col: %.3f, height: %.3f, width: %.3f' % (p[0], p[1], p[2], p[3]))
 
 		plot_prediction(x, p)
 
@@ -113,7 +113,7 @@ def main():
 	# x, y = X[0], Y[0]
 	# plt.figure(0)
 	# plt.imshow(x, cmap='gray')
-	# plt.title('row: {}, col: {}, hight: {}, width: {}'.format(100*y[0], 100*y[1], 100*y[2], 100*y[3]))
+	# plt.title('row: {}, col: {}, height: {}, width: {}'.format(100*y[0], 100*y[1], 100*y[2], 100*y[3]))
 	# plt.show()
 
 	# pass the data generator to our model and train the model:
