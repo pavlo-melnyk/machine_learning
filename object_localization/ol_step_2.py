@@ -47,7 +47,7 @@ def make_model(loss='binary_crossentropy'):
 
 def image_generator(ob_img, batch_size=64, n_batches=10):
 	ob_H, ob_W = ob_img.shape[:2]
-	# generate 100x100 samples and targets:
+	# generate IMG_DIM x IMG_DIM samples and targets:
 	while True:
 		for _ in range(n_batches):
 			# create placeholders:
@@ -55,14 +55,14 @@ def image_generator(ob_img, batch_size=64, n_batches=10):
 			Y = np.zeros((batch_size, 4))
 
 			for i in range(batch_size):
-				# create and store the boxes:
+				# select a location for the object:
 				row0 = np.random.randint(0, IMG_DIM - ob_H)
 				col0 = np.random.randint(0, IMG_DIM - ob_W)
 				row1 = row0 + ob_H # row1 >= row0
 				col1 = col0 + ob_W # col1 >= col0
 				
-				# fill in the white rectangle:
-				X[i, row0:row1, col0:col1, :] = ob_img
+				# place the object:
+				X[i, row0:row1, col0:col1, :] = ob_img				X[i, row0:row1, col0:col1, :] = ob_img
 				
 				# normalize the targets to be in range [0, 1]:
 				Y[i, 0] = row0 / IMG_DIM            # top-left corner y-coord
@@ -112,7 +112,7 @@ def main():
 	# load the object image:
 	ob = image.load_img('pikachu_tight.png')
 	# compare the two ways of loading:
-	ob_ = imread('pikachu_tight.png') # (ob_H x ob_W x 4) b/c includes includes the alpha channel
+	# ob_ = imread('pikachu_tight.png') # (ob_H x ob_W x 4) b/c includes includes the alpha channel
 	# plt.figure(10)
 	# plt.imshow(ob)
 	# plt.title(str(type(ob))+'\n'+str(np.array(ob).shape))
@@ -133,7 +133,7 @@ def main():
 	# exit()
 
 	# create the model:
-	model = make_model(loss='binary_crossentropy')
+	model = make_model(loss='mse')
 
 	# sanity check - test the generator:
 	gen = image_generator(np.array(ob), 1)
@@ -157,8 +157,8 @@ def main():
 
 	# pass the data generator to our model and train the model:
 	model.fit_generator(
-		image_generator(np.array(ob), 16, 100), 
-		steps_per_epoch=100,
+		image_generator(np.array(ob), 16, 50), 
+		steps_per_epoch=50,
 		epochs=5,
 	)
 
