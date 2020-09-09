@@ -56,13 +56,13 @@ def image_generator(ob_img, batch_size=64, n_batches=10):
 
 			for i in range(batch_size):
 				# resize the object:
-				scale = np.random.uniform(0.999, 1.001)
+				scale = np.random.uniform(0.5, 1.5)
 				# scale = 0.5 + np.random.random() # [0.5, 1.5]
 				ob_H_new, ob_W_new = int(scale * ob_H), int(scale * ob_W)
-				ob_img = resize(
+				ob_img_new = resize(
 					ob_img,
 					(ob_H_new, ob_W_new),
-					preserve_range=True).astype(np.float32) # 0...255
+					preserve_range=True).astype(np.float64) # 0...255
 
 				# select a location for the object:
 				row0 = np.random.randint(IMG_DIM - ob_H_new)
@@ -71,7 +71,7 @@ def image_generator(ob_img, batch_size=64, n_batches=10):
 				col1 = col0 + ob_W_new # col1 >= col0
 				
 				# place the object:
-				X[i, row0:row1, col0:col1, :] = ob_img
+				X[i, row0:row1, col0:col1, :] = ob_img_new[:,:,:3]
 				
 				# normalize the targets to be in range [0, 1]:
 				Y[i, 0] = row0 / IMG_DIM            # top-left corner y-coord
@@ -121,7 +121,9 @@ def plot_prediction(x, p):
 
 def main():
 	# load the object image:
-	ob = image.load_img('bulbasaur_tight.png')
+	# ob = image.load_img('bulbasaur_tight.png')
+	ob = imread('bulbasaur_tight.png')
+
 	# plt.figure(10)
 	# plt.imshow(ob)
 	# plt.title(str(type(ob))+'\n'+str(np.array(ob).shape))
@@ -129,7 +131,7 @@ def main():
 	# exit()
 
 	# create the model:
-	model = make_model(loss='mse', lr=1e-5)
+	model = make_model(loss='binary_crossentropy', lr=1e-5)
 
 	# sanity check - test the generator:
 	gen = image_generator(np.array(ob), 1)
