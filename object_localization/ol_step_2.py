@@ -62,7 +62,7 @@ def image_generator(ob_img, batch_size=64, n_batches=10):
 				col1 = col0 + ob_W # col1 >= col0
 				
 				# place the object:
-				X[i, row0:row1, col0:col1, :] = ob_img				X[i, row0:row1, col0:col1, :] = ob_img
+				X[i, row0:row1, col0:col1, :] = ob_img
 				
 				# normalize the targets to be in range [0, 1]:
 				Y[i, 0] = row0 / IMG_DIM            # top-left corner y-coord

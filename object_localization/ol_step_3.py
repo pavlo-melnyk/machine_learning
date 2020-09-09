@@ -56,16 +56,17 @@ def image_generator(ob_img, batch_size=64, n_batches=10):
 
 			for i in range(batch_size):
 				# resize the object:
-				scale = 0.5 + np.random.random() # [0.5, 1.5]
+				scale = np.random.uniform(0.999, 1.001)
+				# scale = 0.5 + np.random.random() # [0.5, 1.5]
 				ob_H_new, ob_W_new = int(scale * ob_H), int(scale * ob_W)
 				ob_img = resize(
 					ob_img,
 					(ob_H_new, ob_W_new),
-					preserve_range=True).astype(np.uint8) # 0...255
+					preserve_range=True).astype(np.float32) # 0...255
 
 				# select a location for the object:
-				row0 = np.random.randint(0, IMG_DIM - ob_H_new)
-				col0 = np.random.randint(0, IMG_DIM - ob_W_new)
+				row0 = np.random.randint(IMG_DIM - ob_H_new)
+				col0 = np.random.randint(IMG_DIM - ob_W_new)
 				row1 = row0 + ob_H_new # row1 >= row0
 				col1 = col0 + ob_W_new # col1 >= col0
 				
@@ -106,19 +107,21 @@ def plot_prediction(x, p):
 
 	# need to specify [col, row, width, height]
 	rect = Rectangle(
-		(int(p[1]), int(p[0])),
-		int(p[3]), int(p[2]), 
+		(p[1], p[0]),
+		p[3], p[2], 
 		linewidth=1, edgecolor='r', facecolor='none'
 	)
 
 	ax.add_patch(rect)
 	plt.show()
 
+# from ol_step_2 import image_generator
+
 
 
 def main():
 	# load the object image:
-	ob = image.load_img('pikachu_tight.png')
+	ob = image.load_img('bulbasaur_tight.png')
 	# plt.figure(10)
 	# plt.imshow(ob)
 	# plt.title(str(type(ob))+'\n'+str(np.array(ob).shape))
@@ -126,32 +129,32 @@ def main():
 	# exit()
 
 	# create the model:
-	model = make_model(loss='binary_crossentropy')
+	model = make_model(loss='mse', lr=1e-5)
 
 	# sanity check - test the generator:
 	gen = image_generator(np.array(ob), 1)
-	# for _ in range(10):
-	# 	X, Y = next(gen)
-	# 	x, y = X[0], (IMG_DIM * Y[0]).astype(np.int32)	
-	# 	# plot_prediction(x, y)	
-	#	# or:
-	# 	# fig, ax1 = plt.subplots(1)
-	# 	# ax1.imshow(x)
-	# 	# plt.title('row: {}, col: {}, height: {}, width: {}'.format(y[0], y[1], y[2], y[3]))
-	# 	# rect = Rectangle(
-	# 	# 	(y[1], y[0]),
-	# 	# 	y[3], y[2], 
-	# 	# 	linewidth=1, edgecolor='r', facecolor='none'
-	# 	# )
-	# 	# ax1.add_patch(rect)
-	# 	# plt.show()
+	for _ in range(10):
+		X, Y = next(gen)
+		x, y = X[0], (IMG_DIM * Y[0]).astype(np.int32)	
+		plot_prediction(x, y)	
+		# or:
+		# fig, ax1 = plt.subplots(1)
+		# ax1.imshow(x)
+		# plt.title('row: {}, col: {}, height: {}, width: {}'.format(y[0], y[1], y[2], y[3]))
+		# rect = Rectangle(
+		# 	(y[1], y[0]),
+		# 	y[3], y[2], 
+		# 	linewidth=1, edgecolor='r', facecolor='none'
+		# )
+		# ax1.add_patch(rect)
+		# plt.show()
 	# exit()
 
 	# pass the data generator to our model and train the model:
 	model.fit_generator(
-		image_generator(np.array(ob), 24, 100), 
-		steps_per_epoch=100,
-		epochs=10,
+		image_generator(np.array(ob), 16, 50), 
+		steps_per_epoch=50,
+		epochs=5,
 	)
 
 	for _ in range(10):
