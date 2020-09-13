@@ -1,0 +1,1 @@
+## Object Localization project from the [Deep Learning: Advanced Computer Vision](https://www.udemy.com/course/advanced-computer-vision/) course.
