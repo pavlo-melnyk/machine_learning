@@ -180,7 +180,7 @@ def main():
 		bg_imgs.append(np.array(imread(bg)))
 
 	# create the model:
-	model = make_model(loss='mse', lr=1e-5)
+	model = make_model(loss='binary_crossentropy', lr=1e-4)
 
 	# sanity check - test the generator:
 	gen = image_generator(ob, bg_imgs, 1)
