@@ -1,7 +1,8 @@
 # Object Localization project from  
 # https://www.udemy.com/course/advanced-computer-vision/
-# Step 6: localize an object of different orientation and sizes on different b/g
-#         assuming that the object may not appear in an image at all.
+# Step 7: localize multiple objects of different orientation and sizes on different b/g
+#         assuming that the objects may not appear in an image at all.
+
 
 import tensorflow as tf
 import numpy as np
@@ -12,21 +13,23 @@ if tf.__version__[0] == '2':
 	print('Hello TensorFlow {}!'.format(tf.__version__))
 	from tensorflow.keras.applications import VGG16
 	from tensorflow.keras.applications.vgg16 import preprocess_input
-	from tensorflow.keras.layers import Flatten, Dense
+	from tensorflow.keras.layers import Flatten, Dense, Concatenate
 	from tensorflow.keras.models import Model 
 	from tensorflow.keras.optimizers import Adam, SGD
-	from tensorflow.keras.losses import binary_crossentropy
+	from tensorflow.keras.losses import binary_crossentropy, categorical_crossentropy
 	from tensorflow.keras.preprocessing import image
+	from tensorflow.keras.utils.vis_utils import plot_model
 
 else:
 	import keras
 	from keras.applications import VGG16
 	from keras.applications.vgg16 import preprocess_input
-	from keras.layers import Flatten, Dense
+	from keras.layers import Flatten, Dense, Concatenate
 	from keras.models import Model 
 	from keras.optimizers import Adam, SGD
-	from keras.losses import binary_crossentropy
+	from keras.losses import binary_crossentropy, categorical_crossentropy
 	from keras.preprocessing import image
+	from keras.utils.vis_utils import plot_model
 
 from imageio import imread
 from skimage.transform import resize
@@ -38,47 +41,58 @@ from glob import glob
 IMG_DIM = 200
 
 # weights for the custom loss components:
-ALPHA = 2
-BETA = 0.5
+ALPHA = 1
+BETA = 1
+GAMMA = 0.5
 
+APPEAR_CHANCE = 0.25
 
 
 def custom_loss(y_true, y_pred):
-	# y_true[i] = (row, col, height, width, p(object_appeared|img))
+	# y_true[i] = (row, col, height, width, 
+	#              p_class1, p_class2, p_class3, 
+	#              p(object_appeared|img))
 	# the bounding box loss:
 	bce_1 = binary_crossentropy(y_true[:, :-1], y_pred[:, :-1])
+	# the object class prediction loss:
+	cce = categorical_crossentropy(y_true[:, 4:7], y_pred[:, 4:7])
 	# the binary prediction (about an object being present in an image) loss:
 	bce_2 = binary_crossentropy(y_true[:, -1], y_pred[:, -1])
-	return ALPHA * y_true[:, -1] * bce_1 + BETA * bce_2
+	return ALPHA * y_true[:, -1] * bce_1 + BETA * y_true[:, -1] * cce + GAMMA * bce_2
 
 
 
-def make_model(loss=custom_loss, lr=1e-4):
+def make_model(loss=custom_loss, K=3, lr=1e-4):
 	vgg = VGG16(
 		input_shape=[IMG_DIM, IMG_DIM, 3],
 		include_top=False,
 		weights='imagenet')
 	x = Flatten()(vgg.output)
-	x = Dense(5, activation='sigmoid')(x)
+	# bounding box prediction:
+	x1 = Dense(4, activation='sigmoid')(x)
+	# multiclass classification prediction:
+	x2 = Dense(K, activation='softmax')(x)
+	# binary decision prediction:
+	x3 = Dense(1, activation='sigmoid')(x)
+	# concatenate the two output layers:
+	x = Concatenate()([x1, x2, x3])
 	model = Model(vgg.input, x)
 	model.compile(loss=loss, optimizer=Adam(lr=lr))	
 	return model
 
 
 
-def image_generator(ob_img, bg_imgs, batch_size=64, n_batches=10):
+def image_generator(ob_imgs, bg_imgs, batch_size=64, n_batches=10):
 	# generate IMG_DIMxIMG_DIM samples and targets:
 
 	# IMG_DIM = bg_image.shape[:2]
-	
-	ob_H, ob_W = ob_img.shape[:2]
 
 	while True:
 		for _ in range(n_batches):
 			# create placeholders:
 			# X = np.repeat(np.expand_dims(bg_image, 0), batch_size, 0)
 			X = np.zeros((batch_size, IMG_DIM, IMG_DIM, 3))
-			Y = np.zeros((batch_size, 5))
+			Y = np.zeros((batch_size, 8))
 
 			for i in range(batch_size):
 				# select a b/g image:
@@ -107,8 +121,13 @@ def image_generator(ob_img, bg_imgs, batch_size=64, n_batches=10):
 				# object may not appear in an image:
 				p_appear = np.random.random()
 
-				if p_appear > 0.5:					
-				# resize the object:
+				if p_appear > APPEAR_CHANCE:	
+					# select an object image:
+					ob_idx = np.random.choice(len(ob_imgs))
+					ob_img = ob_imgs[ob_idx]
+					ob_H, ob_W = ob_img.shape[:2]
+					
+					# resize the object:
 					scale = np.random.uniform(0.5, 1.5)
 					# scale = 0.5 + np.random.random() # [0.5, 1.5]
 					ob_H_new, ob_W_new = int(scale * ob_H), int(scale * ob_W)
@@ -136,43 +155,46 @@ def image_generator(ob_img, bg_imgs, batch_size=64, n_batches=10):
 					# place the object:				
 					X[i, row0:row1, col0:col1, :] += ob_img_new[:,:,:3]
 
-					
 					# normalize the targets to be in range [0, 1]:
 					Y[i, 0] = row0 / IMG_DIM            # top-left corner y-coord
 					Y[i, 1] = col0 / IMG_DIM            # tor-left corner x-coord
 					Y[i, 2] = (row1 - row0) / IMG_DIM   # height
 					Y[i, 3] = (col1 - col0) / IMG_DIM   # width
-				
+					Y[i, 4+ob_idx] = 1                  # p(y=class_i|img) = 1
+
 				# the binary decision p(object_appeared|img) = {0, 1}:
-				Y[i, 4] = p_appear > 0.5
+				Y[i, 7] = p_appear > APPEAR_CHANCE
 								
 			# yield a batch of samples and targets:
 			yield X / 255., Y
 
 
 
-def make_and_plot_prediction(model, x, y=''):
-	if len(y) == 5:
-		y[:-1] *= IMG_DIM
-		print('\n\ntarget\nrow: %d, col: %d, height: %d, width: %d, p(object_appeared|img): %d' % (int(y[0]), int(y[1]), int(y[2]), int(y[3]), int(y[4])))
+def make_and_plot_prediction(model, x, y='', label_names=['class1', 'class2', 'class3']):
+	if len(y) == 8:
+		y[:4] *= IMG_DIM
+		print('\n\ntarget\nrow: %d, col: %d, height: %d, width: %d, p(object_appeared|img): %d' % (int(y[0]), int(y[1]), int(y[2]), int(y[3]), int(y[-1])))
+		print('object: ', label_names[np.argmax(y[4:-1])])
 
 	# predict bounding box using the pre-trained model:
 	p = model.predict(np.expand_dims(x, axis=0))[0]
 
 	# reverse the transformation into un-normalized form:
-	p[:-1] *= IMG_DIM
-	print('\nprediction\nrow: %d, col: %d, height: %d, width: %d, p(object_appeared|img): %d' % (int(p[0]), int(p[1]), int(p[2]), int(p[3]), int(p[4]>0.5)))
+	p[:4] *= IMG_DIM
+	ob_idx = np.argmax(p[4:-1]) # prediction idx
+	print('\nprediction\nrow: %d, col: %d, height: %d, width: %d, p(object_appeared|img): %d' % (int(p[0]), int(p[1]), int(p[2]), int(p[3]), int(p[-1]>APPEAR_CHANCE)))
+	print('detected object: %s, p_class: %.3f' % (label_names[ob_idx], p[4+ob_idx]))
+	print(p[4:-1])
+	plot_prediction(x, p, label_names=label_names)
 
-	plot_prediction(x, p)
 
 
-
-def plot_prediction(x, p, hide_box=False):
+def plot_prediction(x, p, hide_box=False, label_names=['class1', 'class2', 'class3']):
 	# draw the box:
 	fig, ax = plt.subplots(1)
 	ax.imshow(x)
 	# if the object is detected:
-	if p[4] > 0.5:
+	if p[-1] > APPEAR_CHANCE:
 		if not hide_box:
 			# need to specify [col, row, width, height]
 			rect = Rectangle(
@@ -181,7 +203,7 @@ def plot_prediction(x, p, hide_box=False):
 				linewidth=1, edgecolor='r', facecolor='none'
 			)
 			ax.add_patch(rect)
-		plt.title('Object is present')
+		plt.title('Object: '+label_names[np.argmax(p[4:-1])])
 	else:
 		plt.title('No object')
 	plt.show()
@@ -191,17 +213,17 @@ def plot_prediction(x, p, hide_box=False):
 
 
 def main():
-	# load the object image:
-	ob = imread('bulbasaur_tight.png')
-	# ob = imread('pikachu_tight.png')
-	# ob = imread('charmander_tight.png')
-	ob = np.array(ob)
-	
+	# load the object images:
+	ob1 = np.array(imread('bulbasaur_tight.png'))
+	ob2 = np.array(imread('pikachu_tight.png'))
+	ob3 = np.array(imread('charmander_tight.png'))
+	ob_imgs = [ob1, ob2, ob3]
+	label_names = ['Bulbasaur', 'Pikachu', 'Charmander']
+
 	# plt.figure(10)
 	# plt.imshow(ob)
 	# plt.title(str(type(ob))+'\n'+str(ob.shape))
 	# plt.show()
-	# exit()
 	
 	# load b/g images:
 	bg_imgs = []
@@ -211,25 +233,26 @@ def main():
 
 	# create the model:
 	model = make_model(loss=custom_loss, lr=1e-4)
+	# plot_model(model, to_file='model_step_7.png', show_shapes=True, show_layer_names=True)
 
 	# sanity check - test the generator:
-	gen = image_generator(ob, bg_imgs, 1)
+	gen = image_generator(ob_imgs, bg_imgs, 1)
 	for _ in range(10):
 		X, Y = next(gen)
 		x, y = X[0], (IMG_DIM * Y[0]).astype(np.int32)	
-		plot_prediction(x, y, hide_box=True)	
+		plot_prediction(x, y, hide_box=True, label_names=label_names)	
 	# exit()
 
 	# pass the data generator to our model and train the model:
 	model.fit_generator(
-		image_generator(ob, bg_imgs, 16, 50), 
+		image_generator(ob_imgs, bg_imgs, 16, 50), 
 		steps_per_epoch=50,
 		epochs=5,
 	)
 
 	for _ in range(10):
 		X, Y = next(gen)
-		make_and_plot_prediction(model, X[0], Y[0])
+		make_and_plot_prediction(model, X[0], Y[0], label_names)
 
 
 
