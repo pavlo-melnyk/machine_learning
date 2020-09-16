@@ -46,7 +46,10 @@ ALPHA = 4
 BETA = 1
 GAMMA = 0.5
 
-APPEAR_CHANCE = 0.25
+# for generating images:
+# whether any object of interest appears in an image at all
+APPEAR_CHANCE = 0.75
+
 
 
 def custom_loss(y_true, y_pred):
@@ -123,7 +126,7 @@ def image_generator(ob_imgs, bg_imgs, batch_size=64, n_batches=10):
 				# object may not appear in an image:
 				p_appear = np.random.random()
 
-				if p_appear > APPEAR_CHANCE:	
+				if p_appear < APPEAR_CHANCE:	
 					# select an object image:
 					ob_idx = np.random.choice(len(ob_imgs))
 					ob_img = ob_imgs[ob_idx]
@@ -165,7 +168,7 @@ def image_generator(ob_imgs, bg_imgs, batch_size=64, n_batches=10):
 					Y[i, 4] = ob_idx					# p(y=class_i|img) = object_index
 
 				# the binary decision p(object_appeared|img) = {0, 1}:
-				Y[i, -1] = p_appear > APPEAR_CHANCE
+				Y[i, -1] = p_appear < APPEAR_CHANCE
 								
 			# yield a batch of samples and targets:
 			yield X / 255., Y
@@ -176,8 +179,8 @@ def make_and_plot_prediction(model, x, y='', label_names=['class1', 'class2', 'c
 	if len(y) == 6:
 		y[:4] *= IMG_DIM
 		print('\n\ntarget\nrow: %d, col: %d, height: %d, width: %d, p(object_appeared|img): %d' % (int(y[0]), int(y[1]), int(y[2]), int(y[3]), int(y[-1])))
-		if y[-1]:
-			print('object: ', label_names[np.argmax(y[4:-1])])
+		if int(y[-1]):
+			print('object: ', label_names[int(y[4])])
 
 	# predict bounding box using the pre-trained model:
 	p = model.predict(np.expand_dims(x, axis=0))[0]
@@ -185,7 +188,7 @@ def make_and_plot_prediction(model, x, y='', label_names=['class1', 'class2', 'c
 	# reverse the transformation into un-normalized form:
 	p[:4] *= IMG_DIM
 	# is there an object?
-	p_7 = int(p[-1]>APPEAR_CHANCE) 
+	p_7 = int(p[-1] > 0.5) 
 	print('\nprediction\nrow: %d, col: %d, height: %d, width: %d, p(object_appeared|img): %d' % (int(p[0]), int(p[1]), int(p[2]), int(p[3]), p_7))
 	if p_7:
 		ob_idx = np.argmax(p[4:-1]) # prediction idx
@@ -200,7 +203,7 @@ def plot_prediction(x, p, hide_box=False, label_names=['class1', 'class2', 'clas
 	fig, ax = plt.subplots(1)
 	ax.imshow(x)
 	# if the object is detected:
-	if p[-1] > APPEAR_CHANCE:
+	if p[-1] > 0.5:
 		if not hide_box:
 			# need to specify [col, row, width, height]
 			rect = Rectangle(
@@ -217,8 +220,6 @@ def plot_prediction(x, p, hide_box=False, label_names=['class1', 'class2', 'clas
 	else:
 		plt.title('No object')
 	plt.show()
-
-# from ol_step_2 import image_generator
 
 
 
@@ -254,18 +255,12 @@ def main():
 	print('\n$ testing the image generator:')
 	print('random batch of size', n)
 	print('percent no object:\t %.3f' % ((Y[:,-1]==0).sum() / n))
-	if len(Y[0]) == 6:
-		print('percent Bulbasaur:\t %.3f' % ((Y[:,4]==0).sum() / n))
-		print('percent Pikachu:\t %.3f' % ((Y[:,4]==1).sum() / n))
-		print('percent Charmander:\t %.3f' % ((Y[:,4]==2).sum() / n))
-	else:
-		print('percent Bulbasaur:\t %.3f' % (Y[:,4].sum() / n))
-		print('percent Pikachu:\t %.3f' % (Y[:,5].sum() / n))
-		print('percent Charmander:\t %.3f' % (Y[:,6].sum() / n))
+	print('percent Bulbasaur:\t %.3f' % ((Y[:,4]==0).sum() / n))
+	print('percent Pikachu:\t %.3f' % ((Y[:,4]==1).sum() / n))
+	print('percent Charmander:\t %.3f' % ((Y[:,4]==2).sum() / n))
 	print()
 
-	for _ in range(10):
-		i = np.random.choice(n)
+	for i in range(10):
 		x, y = X[i], Y[i]
 		y[:4] *= IMG_DIM	
 		plot_prediction(x, y.astype(np.int), hide_box=True, label_names=label_names)	

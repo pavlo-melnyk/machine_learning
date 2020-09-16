@@ -44,7 +44,9 @@ ALPHA = 1
 BETA = 1
 GAMMA = 0.5
 
-APPEAR_CHANCE = 0.25
+# for generating images:
+# whether any object of interest appears in an image at all
+APPEAR_CHANCE = 0.75
 
 
 def custom_loss(y_true, y_pred):
@@ -120,7 +122,7 @@ def image_generator(ob_imgs, bg_imgs, batch_size=64, n_batches=10):
 				# object may not appear in an image:
 				p_appear = np.random.random()
 
-				if p_appear > APPEAR_CHANCE:	
+				if p_appear < APPEAR_CHANCE:	
 					# select an object image:
 					ob_idx = np.random.choice(len(ob_imgs))
 					ob_img = ob_imgs[ob_idx]
@@ -162,7 +164,7 @@ def image_generator(ob_imgs, bg_imgs, batch_size=64, n_batches=10):
 					Y[i, 4+ob_idx] = 1                  # p(y=class_i|img) = 1
 
 				# the binary decision p(object_appeared|img) = {0, 1}:
-				Y[i, 7] = p_appear > APPEAR_CHANCE
+				Y[i, 7] = p_appear < APPEAR_CHANCE
 								
 			# yield a batch of samples and targets:
 			yield X / 255., Y
@@ -182,7 +184,7 @@ def make_and_plot_prediction(model, x, y='', label_names=['class1', 'class2', 'c
 	# reverse the transformation into un-normalized form:
 	p[:4] *= IMG_DIM
 	# is there an object?
-	p_7 = int(p[-1]>APPEAR_CHANCE) 
+	p_7 = int(p[-1] > 0.5) 
 	print('\nprediction\nrow: %d, col: %d, height: %d, width: %d, p(object_appeared|img): %d' % (int(p[0]), int(p[1]), int(p[2]), int(p[3]), p_7))
 	if p_7:
 		ob_idx = np.argmax(p[4:-1]) # prediction idx
@@ -197,7 +199,7 @@ def plot_prediction(x, p, hide_box=False, label_names=['class1', 'class2', 'clas
 	fig, ax = plt.subplots(1)
 	ax.imshow(x)
 	# if the object is detected:
-	if p[-1] > APPEAR_CHANCE:
+	if p[-1] > 0.5:
 		if not hide_box:
 			# need to specify [col, row, width, height]
 			rect = Rectangle(
@@ -210,8 +212,6 @@ def plot_prediction(x, p, hide_box=False, label_names=['class1', 'class2', 'clas
 	else:
 		plt.title('No object')
 	plt.show()
-
-# from ol_step_2 import image_generator
 
 
 
@@ -259,8 +259,8 @@ def main():
 
 	# pass the data generator to our model and train the model:
 	model.fit_generator(
-		image_generator(ob_imgs, bg_imgs, 16, 150), 
-		steps_per_epoch=150,
+		image_generator(ob_imgs, bg_imgs, 16, 50), 
+		steps_per_epoch=50,
 		epochs=5,
 	)
 
