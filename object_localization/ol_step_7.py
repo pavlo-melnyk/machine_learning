@@ -16,7 +16,7 @@ if tf.__version__[0] == '2':
 	from tensorflow.keras.layers import Flatten, Dense, Concatenate
 	from tensorflow.keras.models import Model 
 	from tensorflow.keras.optimizers import Adam, SGD
-	from tensorflow.keras.losses import binary_crossentropy, categorical_crossentropy
+	from tensorflow.keras.losses import binary_crossentropy, categorical_crossentropy, sparse_categorical_crossentropy
 	from tensorflow.keras.preprocessing import image
 	from tensorflow.keras.utils.vis_utils import plot_model
 
@@ -27,7 +27,7 @@ else:
 	from keras.layers import Flatten, Dense, Concatenate
 	from keras.models import Model 
 	from keras.optimizers import Adam, SGD
-	from keras.losses import binary_crossentropy, categorical_crossentropy
+	from keras.losses import binary_crossentropy, categorical_crossentropy, sparse_categorical_crossentropy
 	from keras.preprocessing import image
 	from keras.utils.vis_utils import plot_model
 
@@ -41,7 +41,7 @@ from glob import glob
 IMG_DIM = 200
 
 # weights for the custom loss components:
-ALPHA = 1
+ALPHA = 2
 BETA = 1
 GAMMA = 0.5
 
@@ -56,9 +56,11 @@ def custom_loss(y_true, y_pred):
 	bce_1 = binary_crossentropy(y_true[:, :-1], y_pred[:, :-1])
 	# the object class prediction loss:
 	cce = categorical_crossentropy(y_true[:, 4:7], y_pred[:, 4:7])
+	# scce = sparse_categorical_crossentropy(y_true[:,4], y_pred[:,4])
 	# the binary prediction (about an object being present in an image) loss:
 	bce_2 = binary_crossentropy(y_true[:, -1], y_pred[:, -1])
 	return ALPHA * y_true[:, -1] * bce_1 + BETA * y_true[:, -1] * cce + GAMMA * bce_2
+	# return ALPHA * y_true[:, -1] * bce_1 + BETA * y_true[:, -1] * scce + GAMMA * bce_2
 
 
 
@@ -174,17 +176,21 @@ def make_and_plot_prediction(model, x, y='', label_names=['class1', 'class2', 'c
 	if len(y) == 8:
 		y[:4] *= IMG_DIM
 		print('\n\ntarget\nrow: %d, col: %d, height: %d, width: %d, p(object_appeared|img): %d' % (int(y[0]), int(y[1]), int(y[2]), int(y[3]), int(y[-1])))
-		print('object: ', label_names[np.argmax(y[4:-1])])
+		if y[-1]:
+			print('object: ', label_names[np.argmax(y[4:-1])])
 
 	# predict bounding box using the pre-trained model:
 	p = model.predict(np.expand_dims(x, axis=0))[0]
 
 	# reverse the transformation into un-normalized form:
 	p[:4] *= IMG_DIM
-	ob_idx = np.argmax(p[4:-1]) # prediction idx
-	print('\nprediction\nrow: %d, col: %d, height: %d, width: %d, p(object_appeared|img): %d' % (int(p[0]), int(p[1]), int(p[2]), int(p[3]), int(p[-1]>APPEAR_CHANCE)))
-	print('detected object: %s, p_class: %.3f' % (label_names[ob_idx], p[4+ob_idx]))
-	print(p[4:-1])
+	# is there an object?
+	p_7 = int(p[-1]>APPEAR_CHANCE) 
+	print('\nprediction\nrow: %d, col: %d, height: %d, width: %d, p(object_appeared|img): %d' % (int(p[0]), int(p[1]), int(p[2]), int(p[3]), p_7))
+	if p_7:
+		ob_idx = np.argmax(p[4:-1]) # prediction idx
+		print('detected object: %s\nprobability: %.3f' % (label_names[ob_idx], p[4+ob_idx]))
+	# print(p[4:-1])
 	plot_prediction(x, p, label_names=label_names)
 
 
@@ -236,15 +242,17 @@ def main():
 	# plot_model(model, to_file='model_step_7.png', show_shapes=True, show_layer_names=True)
 
 	# sanity check - test the generator:
-	n = 512
+	n = 16
 	gen = image_generator(ob_imgs, bg_imgs, n, 1)
 	X, Y = next(gen)
 	print('\n$ testing the image generator:')
+	print('random batch of size', n)
 	print('percent no object:\t %.3f' % ((Y[:,7]==0).sum() / n))
 	print('percent Bulbasaur:\t %.3f' % (Y[:,4].sum() / n))
 	print('percent Pikachu:\t %.3f' % (Y[:,5].sum() / n))
 	print('percent Charmander:\t %.3f' % (Y[:,6].sum() / n))
-	
+	print()
+
 	for _ in range(10):
 		i = np.random.choice(n)
 		x, y = X[i], Y[i]
