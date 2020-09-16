@@ -236,23 +236,32 @@ def main():
 	# plot_model(model, to_file='model_step_7.png', show_shapes=True, show_layer_names=True)
 
 	# sanity check - test the generator:
-	gen = image_generator(ob_imgs, bg_imgs, 1)
+	n = 512
+	gen = image_generator(ob_imgs, bg_imgs, n, 1)
+	X, Y = next(gen)
+	print('\n$ testing the image generator:')
+	print('percent no object:\t %.3f' % ((Y[:,7]==0).sum() / n))
+	print('percent Bulbasaur:\t %.3f' % (Y[:,4].sum() / n))
+	print('percent Pikachu:\t %.3f' % (Y[:,5].sum() / n))
+	print('percent Charmander:\t %.3f' % (Y[:,6].sum() / n))
+	
 	for _ in range(10):
-		X, Y = next(gen)
-		x, y = X[0], (IMG_DIM * Y[0]).astype(np.int32)	
-		plot_prediction(x, y, hide_box=True, label_names=label_names)	
+		i = np.random.choice(n)
+		x, y = X[i], Y[i]
+		y[:4] *= IMG_DIM	
+		plot_prediction(x, y.astype(np.int), hide_box=True, label_names=label_names)	
 	# exit()
 
 	# pass the data generator to our model and train the model:
 	model.fit_generator(
-		image_generator(ob_imgs, bg_imgs, 16, 50), 
-		steps_per_epoch=50,
+		image_generator(ob_imgs, bg_imgs, 16, 150), 
+		steps_per_epoch=150,
 		epochs=5,
 	)
 
-	for _ in range(10):
-		X, Y = next(gen)
-		make_and_plot_prediction(model, X[0], Y[0], label_names)
+	X, Y = next(gen)
+	for i in range(10):
+		make_and_plot_prediction(model, X[i], Y[i], label_names)
 
 
 

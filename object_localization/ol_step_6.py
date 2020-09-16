@@ -216,8 +216,9 @@ def main():
 	gen = image_generator(ob, bg_imgs, 1)
 	for _ in range(10):
 		X, Y = next(gen)
-		x, y = X[0], (IMG_DIM * Y[0]).astype(np.int32)	
-		plot_prediction(x, y, hide_box=True)	
+		x, y = X[0], Y[0]
+		y[:4] *= IMG_DIM	
+		plot_prediction(x, y.astype(np.int), hide_box=True)	
 	# exit()
 
 	# pass the data generator to our model and train the model:
