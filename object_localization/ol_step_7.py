@@ -16,8 +16,7 @@ if tf.__version__[0] == '2':
 	from tensorflow.keras.layers import Flatten, Dense, Concatenate
 	from tensorflow.keras.models import Model 
 	from tensorflow.keras.optimizers import Adam, SGD
-	from tensorflow.keras.losses import binary_crossentropy, categorical_crossentropy, sparse_categorical_crossentropy
-	from tensorflow.keras.preprocessing import image
+	from tensorflow.keras.losses import binary_crossentropy, categorical_crossentropy
 	from tensorflow.keras.utils.vis_utils import plot_model
 
 else:
@@ -27,7 +26,7 @@ else:
 	from keras.layers import Flatten, Dense, Concatenate
 	from keras.models import Model 
 	from keras.optimizers import Adam, SGD
-	from keras.losses import binary_crossentropy, categorical_crossentropy, sparse_categorical_crossentropy
+	from keras.losses import binary_crossentropy, categorical_crossentropy
 	from keras.preprocessing import image
 	from keras.utils.vis_utils import plot_model
 
@@ -41,7 +40,7 @@ from glob import glob
 IMG_DIM = 200
 
 # weights for the custom loss components:
-ALPHA = 2
+ALPHA = 1
 BETA = 1
 GAMMA = 0.5
 
@@ -53,14 +52,12 @@ def custom_loss(y_true, y_pred):
 	#              p_class1, p_class2, p_class3, 
 	#              p(object_appeared|img))
 	# the bounding box loss:
-	bce_1 = binary_crossentropy(y_true[:, :-1], y_pred[:, :-1])
+	bce_1 = binary_crossentropy(y_true[:, :4], y_pred[:, :4])
 	# the object class prediction loss:
 	cce = categorical_crossentropy(y_true[:, 4:7], y_pred[:, 4:7])
-	# scce = sparse_categorical_crossentropy(y_true[:,4], y_pred[:,4])
 	# the binary prediction (about an object being present in an image) loss:
 	bce_2 = binary_crossentropy(y_true[:, -1], y_pred[:, -1])
 	return ALPHA * y_true[:, -1] * bce_1 + BETA * y_true[:, -1] * cce + GAMMA * bce_2
-	# return ALPHA * y_true[:, -1] * bce_1 + BETA * y_true[:, -1] * scce + GAMMA * bce_2
 
 
 
